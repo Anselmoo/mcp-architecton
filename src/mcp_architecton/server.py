@@ -560,7 +560,7 @@ def introduce_architecture_impl(name: str, module_path: str) -> dict[str, Any]:
     return {"status": "ok", "written": str(p)}
 
 
-def suggest_refactor_impl(code: str) -> dict[str, Any]:
+def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
     """Suggest refactors toward canonical implementations for detected patterns."""
     findings = analyze_code_for_patterns(code, detector_registry)
     suggestions: list[dict[str, Any]] = []
@@ -974,12 +974,10 @@ def propose_patterns_impl(
     }
 
 
-def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
-    """Alias for suggest_refactor; kept for UI consistency."""
-    return suggest_refactor_impl(code)
+# (canonical implementation defined above)
 
 
-@app.tool(name="list_patterns")
+@app.tool(name="list-patterns")
 def tool_list_patterns() -> list[dict[str, Any]]:
     """List available design patterns with metadata from the catalog."""
     return list_patterns_impl()
@@ -989,7 +987,7 @@ def list_patterns() -> list[dict[str, Any]]:
     return list_patterns_impl()
 
 
-@app.tool(name="analyze_patterns")
+@app.tool(name="analyze-patterns")
 def tool_analyze_patterns(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
@@ -1001,7 +999,7 @@ def analyze_patterns(code: str | None = None, files: list[str] | None = None) ->
     return analyze_patterns_impl(code=code, files=files)
 
 
-@app.tool(name="analyze_metrics")
+@app.tool(name="analyze-metrics")
 def tool_analyze_metrics(code: str | None = None, files: list[str] | None = None) -> dict[str, Any]:
     """Compute Radon metrics (CC/MI/LOC) and aggregate Ruff issues for code or files."""
     return analyze_metrics_impl(code=code, files=files)
@@ -1011,7 +1009,7 @@ def analyze_metrics(code: str | None = None, files: list[str] | None = None) -> 
     return analyze_metrics_impl(code=code, files=files)
 
 
-@app.tool(name="list_architectures")
+@app.tool(name="list-architectures")
 def tool_list_architectures() -> list[dict[str, Any]]:
     """List recognized software architectures from the catalog."""
     return list_architectures_impl()
@@ -1021,7 +1019,7 @@ def list_architectures() -> list[dict[str, Any]]:
     return list_architectures_impl()
 
 
-@app.tool(name="analyze_architectures")
+@app.tool(name="analyze-architectures")
 def tool_analyze_architectures(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
@@ -1035,7 +1033,7 @@ def analyze_architectures(
     return analyze_architectures_impl(code=code, files=files)
 
 
-@app.tool(name="introduce_pattern")
+@app.tool(name="introduce-pattern")
 def tool_introduce_pattern(name: str, module_path: str) -> dict[str, Any]:
     """Create/append a scaffold for the named pattern into module_path (file path)."""
     return introduce_pattern_impl(name=name, module_path=module_path)
@@ -1045,7 +1043,7 @@ def introduce_pattern(name: str, module_path: str) -> dict[str, Any]:
     return introduce_pattern_impl(name=name, module_path=module_path)
 
 
-@app.tool(name="introduce_architecture")
+@app.tool(name="introduce-architecture")
 def tool_introduce_architecture(name: str, module_path: str) -> dict[str, Any]:
     """Create/append a scaffold for the named architecture helper into module_path (file path)."""
     return introduce_architecture_impl(name=name, module_path=module_path)
@@ -1055,17 +1053,17 @@ def introduce_architecture(name: str, module_path: str) -> dict[str, Any]:
     return introduce_architecture_impl(name=name, module_path=module_path)
 
 
-@app.tool(name="suggest_refactor")
-def tool_suggest_refactor(code: str) -> dict[str, Any]:
-    """Suggest refactors aligned to detected patterns with dynamic guidance."""
-    return suggest_refactor_impl(code)
+@app.tool(name="suggest-refactor-patterns")
+def tool_suggest_refactor_patterns(code: str) -> dict[str, Any]:
+    """Suggest refactors for detected patterns (alias of suggest_refactor)."""
+    return suggest_pattern_refactor_impl(code)
 
 
-def suggest_refactor(code: str) -> dict[str, Any]:
-    return suggest_refactor_impl(code)
+def suggest_refactor_patterns(code: str) -> dict[str, Any]:
+    return suggest_pattern_refactor_impl(code)
 
 
-@app.tool(name="suggest_architecture_refactor")
+@app.tool(name="suggest-architecture-refactor")
 def tool_suggest_architecture_refactor(code: str) -> dict[str, Any]:
     """Suggest architectural refactors based on detected architecture styles."""
     return suggest_architecture_refactor_impl(code)
@@ -1075,7 +1073,7 @@ def suggest_architecture_refactor(code: str) -> dict[str, Any]:
     return suggest_architecture_refactor_impl(code)
 
 
-@app.tool(name="scan_anti_patterns")
+@app.tool(name="scan-anti-patterns")
 def tool_scan_anti_patterns(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
@@ -1087,7 +1085,7 @@ def scan_anti_patterns(code: str | None = None, files: list[str] | None = None) 
     return scan_anti_patterns_impl(code=code, files=files)
 
 
-@app.tool(name="analyze_paths")
+@app.tool(name="analyze-paths")
 def tool_analyze_paths(paths: list[str], include_metrics: bool = False) -> dict[str, Any]:
     """Analyze Python files under paths (files/dirs/globs) for patterns; optionally include metrics."""
     return analyze_paths_impl(paths=paths, include_metrics=include_metrics)
@@ -1097,7 +1095,7 @@ def analyze_paths(paths: list[str], include_metrics: bool = False) -> dict[str, 
     return analyze_paths_impl(paths=paths, include_metrics=include_metrics)
 
 
-@app.tool(name="propose_architecture")
+@app.tool(name="propose-architecture")
 def tool_propose_architecture(
     code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
 ) -> dict[str, Any]:
@@ -1111,7 +1109,7 @@ def propose_architecture(
     return propose_architecture_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
-@app.tool(name="propose_patterns")
+@app.tool(name="propose-patterns")
 def tool_propose_patterns(
     code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
 ) -> dict[str, Any]:
@@ -1125,7 +1123,7 @@ def propose_patterns(
     return propose_patterns_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
-@app.tool(name="thresholded_enforcement")
+@app.tool(name="thresholded-enforcement")
 def tool_thresholded_enforcement(
     code: str | None = None, files: list[str] | None = None, max_suggestions: int = 3
 ) -> dict[str, Any]:
@@ -1133,47 +1131,11 @@ def tool_thresholded_enforcement(
     return _thresholded_enforcement(code=code, files=files, max_suggestions=max_suggestions)
 
 
-@app.tool(name="scan_anti_architectures")
+@app.tool(name="scan-anti-architectures")
 def tool_scan_anti_architectures(
     code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
 ) -> dict[str, Any]:
     """Scan like thresholded_enforcement but return only architecture suggestions per source."""
-    base: dict[str, Any] = _thresholded_enforcement(
-        code=code, files=files, max_suggestions=max_suggestions
-    )
-    if "error" in base:
-        return base
-    results_out: list[dict[str, Any]] = []
-    raw_results = base.get("results", [])
-    if isinstance(raw_results, list):
-        for entry in cast(list[object], raw_results):
-            if not isinstance(entry, dict):
-                continue
-            ed = cast(dict[str, Any], entry)
-            arch_sug: list[dict[str, Any]] = []
-            sug_raw = ed.get("suggestions", [])
-            if isinstance(sug_raw, list):
-                for s in cast(list[object], sug_raw):
-                    if isinstance(s, dict):
-                        sd = cast(dict[str, Any], s)
-                        if str(sd.get("category", "")) == "Architecture":
-                            arch_sug.append(sd)
-            results_out.append(
-                {
-                    "source": ed.get("source"),
-                    "metrics": ed.get("metrics"),
-                    "indicators": ed.get("indicators"),
-                    "suggestions": arch_sug[
-                        : max_suggestions if max_suggestions and max_suggestions > 0 else 5
-                    ],
-                }
-            )
-    return {"results": results_out}
-
-
-def scan_anti_architectures(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
-) -> dict[str, Any]:
     base: dict[str, Any] = _thresholded_enforcement(
         code=code, files=files, max_suggestions=max_suggestions
     )
