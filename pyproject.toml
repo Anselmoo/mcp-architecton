@@ -1,0 +1,44 @@
+
+
+[project]
+name = "mcp-architecton"
+version = "0.1.0"
+description = "MCP server for analyzing and introducing Python design patterns"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Your Name" }]
+keywords = ["mcp", "design-patterns", "python", "refactoring", "analysis"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["fastmcp>=0.3.1", "radon>=5.1", "ruff>=0.12.9"]
+
+
+[project.scripts]
+mcp-architecton = "mcp_architecton.server:main"
+architecton-local = "scripts.run_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_architecton"]
+
+[dependency-groups]
+dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1"]

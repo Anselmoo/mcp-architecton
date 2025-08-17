@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "mcp-architecton": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "${workspaceFolder}", "mcp-architecton"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
+    }
+  }
+}

@@ -1,0 +1,372 @@
+{
+  "patterns": [
+    {
+      "name": "Singleton",
+      "category": "Creational",
+      "description": "Ensure a class has only one instance and provide a global point of access.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/singleton",
+        "https://github.com/faif/python-patterns/tree/master/patterns/creational"
+      ]
+    },
+    {
+      "name": "Observer",
+      "category": "Behavioral",
+      "description": "Define a one-to-many dependency so that when one object changes state, all dependents are notified.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/observer",
+        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral"
+      ]
+    },
+    {
+      "name": "Factory Method",
+      "category": "Creational",
+      "description": "Define an interface for creating an object, but let subclasses alter the type of objects that will be created.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/factory-method",
+        "https://github.com/faif/python-patterns/tree/master/patterns/creational"
+      ]
+    },
+    {
+      "name": "Adapter",
+      "category": "Structural",
+      "description": "Allow objects with incompatible interfaces to collaborate by wrapping a class with a compatible interface.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/adapter",
+        "https://github.com/faif/python-patterns/tree/master/patterns/structural"
+      ]
+    },
+    {
+      "name": "Strategy",
+      "category": "Behavioral",
+      "description": "Define a family of algorithms, encapsulate each one, and make them interchangeable.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/strategy",
+        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral"
+      ]
+    },
+    {
+      "name": "Layered Architecture",
+      "category": "Architecture",
+      "description": "Organize system into presentation, application, domain, and infrastructure layers with strict or relaxed dependencies.",
+      "refs": [
+        "https://martinfowler.com/bliki/PresentationDomainDataLayering.html",
+        "https://martinfowler.com/architecture/"
+      ]
+    },
+    {
+      "name": "Hexagonal Architecture",
+      "category": "Architecture",
+      "description": "Ports and adapters isolate the domain from external concerns, enabling easy substitution of UIs and infrastructure.",
+      "refs": [
+        "https://alistair.cockburn.us/hexagonal-architecture/",
+        "https://www.informit.com/articles/article.aspx?p=2805348"
+      ]
+    },
+    {
+      "name": "Clean Architecture",
+      "category": "Architecture",
+      "description": "Entities, use-cases, and interface adapters arranged in concentric layers with dependency rule pointing inward.",
+      "refs": [
+        "https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html",
+        "https://github.com/jasontaylordev/CleanArchitecture"
+      ]
+    },
+    {
+      "name": "Microservices",
+      "category": "Architecture",
+      "description": "An approach to developing a single application as a suite of small services, each running in its own process and communicating with lightweight mechanisms.",
+      "refs": ["https://martinfowler.com/articles/microservices.html"]
+    },
+    {
+      "name": "Event-Driven Architecture",
+      "category": "Architecture",
+      "description": "A style built around asynchronous event production, detection, consumption, and reaction.",
+      "refs": ["https://martinfowler.com/articles/201701-event-driven.html"]
+    },
+    {
+      "name": "CQRS",
+      "category": "Architecture",
+      "description": "Command Query Responsibility Segregation separates read and write models for scalability and clarity.",
+      "refs": ["https://martinfowler.com/bliki/CQRS.html"]
+    },
+    {
+      "name": "Bridge",
+      "category": "Structural",
+      "description": "Decouple an abstraction from its implementation so the two can vary independently.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/bridge",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/bridge.py"
+      ]
+    },
+    {
+      "name": "Composite",
+      "category": "Structural",
+      "description": "Compose objects into tree structures to represent part-whole hierarchies.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/composite",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/composite.py"
+      ]
+    },
+    {
+      "name": "Decorator",
+      "category": "Structural",
+      "description": "Attach additional responsibilities to an object dynamically as wrappers.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/decorator",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/decorator.py"
+      ]
+    },
+    {
+      "name": "Facade",
+      "category": "Structural",
+      "description": "Provide a unified interface to a set of interfaces in a subsystem.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/facade",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/facade.py"
+      ]
+    },
+    {
+      "name": "Flyweight",
+      "category": "Structural",
+      "description": "Use sharing to support large numbers of fine-grained objects efficiently.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/flyweight",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/flyweight.py"
+      ]
+    },
+    {
+      "name": "Front Controller",
+      "category": "Structural",
+      "description": "Centralize request handling by routing and common processing in a single controller.",
+      "refs": [
+        "https://martinfowler.com/eaaCatalog/frontController.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/front_controller.py"
+      ]
+    },
+    {
+      "name": "MVC",
+      "category": "Structural",
+      "description": "Separate concerns into Model, View, and Controller to improve modularity and testability.",
+      "refs": [
+        "https://martinfowler.com/eaaDev/uiArchs.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/mvc.py"
+      ]
+    },
+    {
+      "name": "Proxy",
+      "category": "Structural",
+      "description": "Provide a surrogate or placeholder for another object to control access to it.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/proxy",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/proxy.py"
+      ]
+    },
+    {
+      "name": "3-tier",
+      "category": "Structural",
+      "description": "Layer an application into presentation, logic, and data tiers (example structure).",
+      "refs": [
+        "https://martinfowler.com/bliki/PresentationDomainDataLayering.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/structural/3-tier.py"
+      ]
+    },
+    {
+      "name": "Chain of Responsibility",
+      "category": "Behavioral",
+      "description": "Pass requests along a chain of handlers until one handles it.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/chain-of-responsibility",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/chain_of_responsibility.py"
+      ]
+    },
+    {
+      "name": "Chaining Method",
+      "category": "Behavioral",
+      "description": "Return self from methods to allow call chaining in a fluent interface.",
+      "refs": [
+        "https://martinfowler.com/bliki/FluentInterface.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/chaining_method.py"
+      ]
+    },
+    {
+      "name": "Command",
+      "category": "Behavioral",
+      "description": "Encapsulate a request as an object, allowing parameterization and queuing.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/command",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/command.py"
+      ]
+    },
+    {
+      "name": "Iterator",
+      "category": "Behavioral",
+      "description": "Provide a way to access elements of an aggregate object sequentially.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/iterator",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/iterator.py"
+      ]
+    },
+    {
+      "name": "Mediator",
+      "category": "Behavioral",
+      "description": "Define an object that encapsulates how a set of objects interact.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/mediator",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/mediator.py"
+      ]
+    },
+    {
+      "name": "Memento",
+      "category": "Behavioral",
+      "description": "Capture and externalize an object's internal state so it can be restored later.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/memento",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/memento.py"
+      ]
+    },
+    {
+      "name": "Publish-Subscribe",
+      "category": "Behavioral",
+      "description": "Publish events to multiple subscribers decoupled from the publisher.",
+      "refs": [
+        "https://martinfowler.com/eaaDev/Observers.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/publish_subscribe.py"
+      ]
+    },
+    {
+      "name": "Registry",
+      "category": "Behavioral",
+      "description": "Keep a central registry of objects or services for lookup.",
+      "refs": [
+        "https://martinfowler.com/eaaCatalog/Registry.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/registry.py"
+      ]
+    },
+    {
+      "name": "Servant",
+      "category": "Behavioral",
+      "description": "Provide functionality common to a group of classes via a shared servant object.",
+      "refs": [
+        "https://martinfowler.com/eaaCatalog/ServiceLocator.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/servant.py"
+      ]
+    },
+    {
+      "name": "Specification",
+      "category": "Behavioral",
+      "description": "Combine business rules by chaining specifications as predicates.",
+      "refs": [
+        "https://martinfowler.com/apsupp/spec.pdf",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/specification.py"
+      ]
+    },
+    {
+      "name": "State",
+      "category": "Behavioral",
+      "description": "Allow an object to alter its behavior when its internal state changes.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/state",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/state.py"
+      ]
+    },
+    {
+      "name": "Template Method",
+      "category": "Behavioral",
+      "description": "Define the skeleton of an algorithm in a base operation, deferring steps to subclasses.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/template-method",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/template.py"
+      ]
+    },
+    {
+      "name": "Visitor",
+      "category": "Behavioral",
+      "description": "Represent an operation to be performed on elements of an object structure.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/visitor",
+        "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/visitor.py"
+      ]
+    },
+    {
+      "name": "Abstract Factory",
+      "category": "Creational",
+      "description": "Provide an interface for creating families of related objects without specifying their concrete classes.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/abstract-factory",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/abstract_factory.py"
+      ]
+    },
+    {
+      "name": "Builder",
+      "category": "Creational",
+      "description": "Separate the construction of a complex object from its representation.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/builder",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/builder.py"
+      ]
+    },
+    {
+      "name": "Factory",
+      "category": "Creational",
+      "description": "Provide a method to create objects without exposing the creation logic.",
+      "refs": [
+        "https://refactoring.guru/design-patterns/factory-method",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/factory.py"
+      ]
+    },
+    {
+      "name": "Prototype",
+      "category": "Creational",
+      "description": "Create new objects by copying an existing object (prototype).",
+      "refs": [
+        "https://refactoring.guru/design-patterns/prototype",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/prototype.py"
+      ]
+    },
+    {
+      "name": "Object Pool",
+      "category": "Creational",
+      "description": "Reuse a set of initialized objects kept ready to use.",
+      "refs": [
+        "https://martinfowler.com/eaaCatalog/Pool.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/pool.py"
+      ]
+    },
+    {
+      "name": "Borg",
+      "category": "Creational",
+      "description": "Share state across instances by assigning to the __dict__ of each instance.",
+      "refs": [
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/borg.py"
+      ]
+    },
+    {
+      "name": "Lazy Evaluation",
+      "category": "Creational",
+      "description": "Defer computation until the value is needed.",
+      "refs": [
+        "https://martinfowler.com/bliki/LazyLoad.html",
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/lazy_evaluation.py"
+      ]
+    },
+    {
+      "name": "Blackboard",
+      "category": "Other",
+      "description": "Collaboratively solve problems using a shared global memory (blackboard).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Blackboard_(design_pattern)",
+        "https://github.com/faif/python-patterns/blob/master/patterns/other/blackboard.py"
+      ]
+    },
+    {
+      "name": "Graph Search",
+      "category": "Other",
+      "description": "Implement search algorithms over graph structures (example algorithmic pattern).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Graph_traversal",
+        "https://github.com/faif/python-patterns/blob/master/patterns/other/graph_search.py"
+      ]
+    }
+  ]
+}
