@@ -19,9 +19,9 @@ from mcp_architecton.detectors import registry as detector_registry
 # Implementor snippets are optional; keep the server resilient if not present.
 NAME_ALIASES: dict[str, str] = {}
 try:  # pragma: no cover - optional dependency
-    from mcp_architecton.implementors import NAME_ALIASES as _IMPL_ALIASES, get_snippet  # type: ignore  # noqa: I001
+    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES, get_snippet  # type: ignore
 
-    NAME_ALIASES.update(cast(dict[str, str], _IMPL_ALIASES))
+    NAME_ALIASES.update(_IMPL_ALIASES)
 except Exception:  # pragma: no cover
 
     def get_snippet(_name: str) -> str | None:  # type: ignore
@@ -494,7 +494,8 @@ def introduce_pattern_impl(name: str, module_path: str) -> dict[str, Any]:
 
     Currently supports: Singleton, Strategy, and selected architecture helpers (Repository, Unit of Work, Service Layer, Message Bus, Domain Events, CQRS).
     """
-    name_norm = NAME_ALIASES.get(name.strip().lower(), name.strip().lower())
+    # Delegate alias normalization to implementors.get_snippet for freshness
+    name_norm = name.strip()
     p = Path(module_path)
     if not p.parent.exists():
         return {"error": f"Parent directory does not exist: {p.parent}"}
@@ -537,8 +538,8 @@ def introduce_architecture_impl(name: str, module_path: str) -> dict[str, Any]:
         "3-tier": "three_tier",
     }
     key = arch_aliases.get(key, key)
-    # Allow implementors to provide their own name aliases
-    norm = NAME_ALIASES.get(key, key)
+    # Let implementors map architecture aliases dynamically
+    norm = key
 
     p = Path(module_path)
     if not p.parent.exists():

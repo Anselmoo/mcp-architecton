@@ -10,14 +10,12 @@ Usage:
   uv run python scripts/scan_repo.py
 """
 
-# ruff: noqa: I001
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, cast
 
 from mcp_architecton.server import scan_anti_patterns, thresholded_enforcement
-
 
 SKIP_DIRS = {
     ".git",
