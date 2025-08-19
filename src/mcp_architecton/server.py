@@ -535,6 +535,42 @@ def introduce_pattern_impl(
             return {"error": f"Pattern not supported: {name}"}
 
         if existing_path is not None:
+            # If the caller provided out_path (refactor-as-new), create a new module
+            # containing ONLY the scaffold (optionally normalized), rather than appending
+            # the scaffold to a copy of the original file.
+            if out_path and target != existing_path:
+                # New file creation with snippet-only content
+                if plan_refactor and apply_plan:
+                    try:
+                        plan0 = plan_refactor(snippet, goals=[name_norm])  # type: ignore[misc]
+                        planned0 = apply_plan(snippet, plan0)  # type: ignore[misc]
+                    except Exception:
+                        planned0 = None
+                else:
+                    planned0 = None
+                post_new = (
+                    (transform_code(name_norm, planned0 or snippet) or (planned0 or snippet))
+                    if transform_code
+                    else (planned0 or snippet)
+                )  # type: ignore[call-arg]
+                if not dry_run:
+                    target.write_text(post_new)
+                diff_new = "".join(
+                    difflib.unified_diff(
+                        [],
+                        post_new.splitlines(keepends=True),
+                        fromfile=str(target),
+                        tofile=str(target),
+                    )
+                )
+                return {
+                    "status": "ok",
+                    "written": str(target),
+                    "mode": "created-new",
+                    "dry_run": dry_run,
+                    "diff": diff_new,
+                }
+
             original = existing_path.read_text()
             updated = original + ("\n\n" if not original.endswith("\n") else "\n") + snippet
             # Planner + transform after append
