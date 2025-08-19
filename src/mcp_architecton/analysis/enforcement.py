@@ -70,12 +70,14 @@ def ranked_enforcement_targets(
             ("Mediator", 1),
             ("Visitor", 1),
             ("Facade", 1),
+            ("Borg", 1),  # encourage shared-state consolidation when complexity is global
         ],
         "very_large_function": [
             ("Template Method", 3),
             ("Strategy", 2),
             ("Chain of Responsibility", 1),
             ("Command", 1),
+            ("Borg", 1),
         ],
         "low_mi": [
             ("Facade", 2),
@@ -84,20 +86,24 @@ def ranked_enforcement_targets(
             ("Observer", 1),
             ("Hexagonal Architecture", 1),
             ("Clean Architecture", 1),
+            ("Singleton", 1),
         ],
         "large_file": [
             ("Layered Architecture", 3),
-            ("MVC", 2),
+            ("Model-View-Controller (MVC)", 2),
             ("Hexagonal Architecture", 2),
             ("Clean Architecture", 2),
             ("Three-Tier Architecture", 2),
             ("Facade", 1),
+            ("Borg", 1),
         ],
         "global_or_any_usage": [
             ("Dependency Injection", 3),
             ("Facade", 2),
             ("Hexagonal Architecture", 1),
             ("Service Layer", 1),
+            ("Singleton", 2),
+            ("Borg", 2),
         ],
         "dynamic_eval": [
             ("Factory Method", 3),
@@ -105,6 +111,7 @@ def ranked_enforcement_targets(
             ("Strategy", 1),
             ("Command", 1),
             ("Proxy", 1),
+            ("Visitor", 1),
         ],
         "print_logging": [
             ("Hexagonal Architecture", 2),

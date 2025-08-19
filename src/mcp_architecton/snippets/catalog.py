@@ -15,6 +15,7 @@ class CatalogEntry(TypedDict, total=False):
     category: str
     intent: str
     description: str
+    refs: list[str]
 
 
 class Catalog(TypedDict):
@@ -37,6 +38,7 @@ def load_catalog() -> Catalog:
                     "category": str(e.get("category", "")),
                     "intent": str(e.get("intent", "")),
                     "description": str(e.get("description", "")),
+                    "refs": [str(x) for x in cast(list[Any], e.get("refs", []))],
                 }
             )
         return {"patterns": entries}

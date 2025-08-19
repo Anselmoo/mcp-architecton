@@ -173,38 +173,50 @@ class Blackboard:
 
 def gen_borg(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
-        """
+        '''
 class Borg:
-    _shared_state = {}
+    """Borg pattern: instances share state via shared __dict__."""
 
-    def __init__(self):
+    _shared_state: dict[str, object] = {}
+
+    def __init__(self) -> None:
         self.__dict__ = self._shared_state
 
+
 class SingletonBorg(Borg):
+    """A Borg variant providing a convenient default state."""
 
-    def __init__(self):
+    def __init__(self, state: str | None = None) -> None:
         super().__init__()
-         if state:
-            self.state = state
-        else:
-            self.state = "default"
+        self.state = state or getattr(self, "state", "default")
 
-    def __str__(self) -> str:
-        return self.state
-"""
+    def __str__(self) -> str:  # pragma: no cover - scaffold
+        return str(getattr(self, "state", "default"))
+'''
     ).strip()
 
 
 def gen_catalog(_: str, __: Optional[CatalogEntry]) -> str | None:
+    entry = __ or {}
+    desc = str(entry.get("intent") or entry.get("description") or "Simple in-memory catalog.")
+    refs = entry.get("refs", []) or []
+    refs_comment = ("\n# References:\n" + "\n".join(f"# - {r}" for r in refs)) if refs else ""
     return (
-        """
-class Catalog:
-    def __init__(self) -> None:
-        self.items: dict[str, object] = {}
-
-    def add(self, key: str, item: object) -> None:
-        self.items[key] = item
-"""
+        '"""' + desc + refs_comment + '"""\n\n'
+        "class Catalog:\n"
+        "    def __init__(self) -> None:\n"
+        "        self._items: dict[str, object] = {}\n\n"
+        "    def add(self, key: str, item: object) -> None:\n"
+        '        """Register an item under a key."""\n'
+        "        self._items[key] = item\n\n"
+        "    def get(self, key: str) -> object | None:\n"
+        '        """Retrieve an item by key, or None if missing."""\n'
+        "        return self._items.get(key)\n\n"
+        "    def remove(self, key: str) -> None:\n"
+        '        """Remove an item if it exists."""\n'
+        "        self._items.pop(key, None)\n\n"
+        "    def keys(self) -> list[str]:\n"
+        "        return list(self._items.keys())\n"
     ).strip()
 
 
@@ -245,12 +257,37 @@ class Container:
 
 
 def gen_factory(_: str, __: Optional[CatalogEntry]) -> str | None:
+    entry = __ or {}
+    desc = str(
+        entry.get("intent")
+        or entry.get("description")
+        or "Factory interface and example implementation."
+    )
+    refs = entry.get("refs", []) or []
+    refs_comment = ("\n# References:\n" + "\n".join(f"# - {r}" for r in refs)) if refs else ""
     return (
-        """
-class Factory:
-    def create(self, *args, **kwargs):  # pragma: no cover - scaffold
-        raise NotImplementedError
-"""
+        '"""' + desc + refs_comment + '"""\n\n'
+        "from __future__ import annotations\n"
+        "from typing import Protocol\n\n\n"
+        "class Product(Protocol):\n"
+        "    def use(self) -> str: ...\n\n\n"
+        "class Factory:  # pragma: no cover - scaffold\n"
+        "    def create(self, kind: str) -> Product:\n"
+        '        """Create a product by kind."""\n'
+        "        raise NotImplementedError\n\n\n"
+        "class ConcreteA:\n"
+        "    def use(self) -> str:\n"
+        '        return "A"\n\n\n'
+        "class ConcreteB:\n"
+        "    def use(self) -> str:\n"
+        '        return "B"\n\n\n'
+        "class SimpleFactory(Factory):\n"
+        "    def create(self, kind: str) -> Product:\n"
+        '        if kind == "A":\n'
+        "            return ConcreteA()\n"
+        '        if kind == "B":\n'
+        "            return ConcreteB()\n"
+        '        raise ValueError(f"unknown kind: {kind}")\n'
     ).strip()
 
 
@@ -275,7 +312,23 @@ def bfs(start, neighbors):  # pragma: no cover - scaffold
 def gen_hsm(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
         """
-class State: ...  # hierarchical state machine scaffold
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class HSMState(ABC):
+    @abstractmethod
+    def on_event(self, ctx: "HSM", event: str) -> "HSMState":  # pragma: no cover - scaffold
+        return self
+
+
+class HSM:
+    def __init__(self, initial: HSMState) -> None:
+        self.state = initial
+
+    def dispatch(self, event: str) -> None:  # pragma: no cover - scaffold
+        self.state = self.state.on_event(self, event)
 """
     ).strip()
 
@@ -314,13 +367,31 @@ class Pool:
 
 
 def gen_registry(_: str, __: Optional[CatalogEntry]) -> str | None:
+    entry = __ or {}
+    desc = str(
+        entry.get("intent")
+        or entry.get("description")
+        or "Simple key->value registry with safe access."
+    )
+    refs = entry.get("refs", []) or []
+    refs_comment = ("\n# References:\n" + "\n".join(f"# - {r}" for r in refs)) if refs else ""
     return (
-        """
-class Registry:
-    def __init__(self): self._reg = {}
-    def register(self, key, val): self._reg[key] = val
-    def get(self, key): return self._reg.get(key)
-"""
+        '"""' + desc + refs_comment + '"""\n\n'
+        "from __future__ import annotations\n"
+        "from typing import Generic, TypeVar\n\n"
+        'K = TypeVar("K")\n'
+        'V = TypeVar("V")\n\n\n'
+        "class Registry(Generic[K, V]):\n"
+        "    def __init__(self) -> None:\n"
+        "        self._reg: dict[K, V] = {}\n\n"
+        "    def register(self, key: K, val: V) -> None:\n"
+        "        self._reg[key] = val\n\n"
+        "    def get(self, key: K) -> V | None:\n"
+        "        return self._reg.get(key)\n\n"
+        "    def unregister(self, key: K) -> None:\n"
+        "        self._reg.pop(key, None)\n\n"
+        "    def keys(self) -> list[K]:\n"
+        "        return list(self._reg.keys())\n"
     ).strip()
 
 
@@ -486,8 +557,38 @@ class IterableCollection:
 def gen_mediator(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
         """
+from __future__ import annotations
+
+
 class Mediator:
-    def notify(self, sender, event: str) -> None: ...
+    def __init__(self) -> None:
+        self.a: ComponentA | None = None
+        self.b: ComponentB | None = None
+
+    def notify(self, sender: object, event: str) -> None:  # pragma: no cover - scaffold
+        # Simple orchestration example
+        if event == "A_done" and self.b is not None:
+            self.b.react()
+
+
+class ComponentA:
+    def __init__(self, mediator: Mediator) -> None:
+        self.mediator = mediator
+        self.mediator.a = self
+
+    def act(self) -> None:
+        # do work ... then notify mediator
+        self.mediator.notify(self, "A_done")
+
+
+class ComponentB:
+    def __init__(self, mediator: Mediator) -> None:
+        self.mediator = mediator
+        self.mediator.b = self
+
+    def react(self) -> None:  # pragma: no cover - scaffold
+        # respond to A
+        pass
 """
     ).strip()
 
@@ -543,13 +644,35 @@ class Proxy(Subject):
 def gen_state(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
         """
-class State:
-    def handle(self, ctx) -> None: ...
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class State(ABC):
+    @abstractmethod
+    def handle(self, ctx: Context) -> None:  # pragma: no cover - scaffold
+        ...
 
 
 class Context:
     def __init__(self, state: State) -> None:
         self.state = state
+
+    def request(self) -> None:  # pragma: no cover - scaffold
+        self.state.handle(self)
+
+
+class ConcreteStateA(State):
+    def handle(self, ctx: Context) -> None:
+        # Transition example A -> B
+        ctx.state = ConcreteStateB()
+
+
+class ConcreteStateB(State):
+    def handle(self, ctx: Context) -> None:
+        # Transition example B -> A
+        ctx.state = ConcreteStateA()
 """
     ).strip()
 
@@ -588,8 +711,25 @@ class Handler:
 def gen_visitor(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
         """
-class Visitor:
-    def visit(self, element): ...
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class Visitor(ABC):
+    @abstractmethod
+    def visit_element(self, el: Element) -> None:  # pragma: no cover - scaffold
+        ...
+
+
+class Element(ABC):
+    @abstractmethod
+    def accept(self, v: Visitor) -> None: ...
+
+
+class ConcreteElement(Element):
+    def accept(self, v: Visitor) -> None:
+        v.visit_element(self)
 """
     ).strip()
 
@@ -705,8 +845,10 @@ class PubSub:
 def gen_repository(_: str, __: Optional[CatalogEntry]) -> str | None:
     return (
         """
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, TypeVar
+from typing import Dict, Generic, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -717,8 +859,19 @@ class Repository(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def save(self, entity: T) -> None:  # pragma: no cover - scaffold
+    def save(self, id_: str, entity: T) -> None:  # pragma: no cover - scaffold
         raise NotImplementedError
+
+
+class InMemoryRepository(Repository[T]):
+    def __init__(self) -> None:
+        self._store: Dict[str, T] = {}
+
+    def get(self, id_: str) -> Optional[T]:
+        return self._store.get(id_)
+
+    def save(self, id_: str, entity: T) -> None:
+        self._store[id_] = entity
 """
     ).strip()
 

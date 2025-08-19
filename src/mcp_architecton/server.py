@@ -398,11 +398,16 @@ def introduce_pattern_impl(
     dry_run: bool = False,
     out_path: str | None = None,
 ) -> dict[str, Any]:
-    """Create/append a scaffold for the named pattern into module_path with transforms and diff."""
+    """Create/append a scaffold for the named pattern into module_path with transforms and diff.
+
+    If module_path is a directory, apply transform/scaffold across all Python files under it
+    (recursively), optionally writing results to an out_path directory (mirrored structure).
+    Aggregates diffs for all changed files.
+    """
     name_norm = _canonical_pattern_name(name)
     p = Path(module_path)
     target = Path(out_path) if out_path else p
-    base_parent = target.parent if out_path else p.parent
+    base_parent = target if p.is_dir() else (target.parent if out_path else p.parent)
     if not base_parent.exists():
         return {"error": f"Parent directory does not exist: {base_parent}"}
 
@@ -418,6 +423,64 @@ def introduce_pattern_impl(
         apply_plan = None  # type: ignore[assignment]
 
     try:
+        # Directory-wide mode
+        if p.is_dir() or (out_path and target.is_dir()):
+            changed: list[dict[str, str]] = []
+            src_root = p if p.is_dir() else (target if target.is_dir() else p)
+            dst_root = Path(out_path) if out_path else src_root
+            for src in sorted(src_root.rglob("*.py")):
+                rel = src.relative_to(src_root)
+                dst = dst_root / rel
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                original = src.read_text()
+                planned: str | None = None
+                if plan_refactor and apply_plan:
+                    try:
+                        plan = plan_refactor(original, goals=[name_norm])  # type: ignore[misc]
+                        planned = apply_plan(original, plan)  # type: ignore[misc]
+                    except Exception:
+                        planned = None
+                rewritten: str | None = (
+                    transform_code(name_norm, planned or original) if transform_code else planned
+                )  # type: ignore[call-arg]
+                post = rewritten or original
+                if post != original:
+                    if not dry_run:
+                        dst.write_text(post)
+                    diff = "".join(
+                        difflib.unified_diff(
+                            original.splitlines(keepends=True),
+                            post.splitlines(keepends=True),
+                            fromfile=str(src),
+                            tofile=str(dst),
+                        )
+                    )
+                    changed.append({"path": str(dst), "diff": diff})
+            if not changed:
+                # If no transforms occurred, create a new scaffold module in dst_root
+                snippet = get_snippet(name_norm)
+                if snippet:
+                    new_file = (Path(out_path) if out_path else src_root) / f"{name_norm}.py"
+                    if not dry_run:
+                        new_file.parent.mkdir(parents=True, exist_ok=True)
+                        new_file.write_text(snippet)
+                    diff = "".join(
+                        difflib.unified_diff(
+                            [],
+                            snippet.splitlines(keepends=True),
+                            fromfile=str(new_file),
+                            tofile=str(new_file),
+                        )
+                    )
+                    changed.append({"path": str(new_file), "diff": diff})
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "transformed-dir" if changed else "created-new",
+                "dry_run": dry_run,
+                "changes": changed,
+            }
+
         existing_path = p if p.exists() else (target if target.exists() else None)
         if existing_path is not None:
             original = existing_path.read_text()
@@ -476,7 +539,7 @@ def introduce_pattern_impl(
             else:
                 planned2 = None
             post = (
-                cast(str, (transform_code(name_norm, planned2 or updated) or (planned2 or updated)))
+                (transform_code(name_norm, planned2 or updated) or (planned2 or updated))
                 if transform_code
                 else (planned2 or updated)
             )  # type: ignore[call-arg]
@@ -508,7 +571,7 @@ def introduce_pattern_impl(
             else:
                 planned0 = None
             post = (
-                cast(str, (transform_code(name_norm, planned0 or snippet) or (planned0 or snippet)))
+                (transform_code(name_norm, planned0 or snippet) or (planned0 or snippet))
                 if transform_code
                 else (planned0 or snippet)
             )  # type: ignore[call-arg]
@@ -567,7 +630,7 @@ def introduce_architecture_impl(
 
     p = Path(module_path)
     target = Path(out_path) if out_path else p
-    base_parent = target.parent if out_path else p.parent
+    base_parent = target if p.is_dir() else (target.parent if out_path else p.parent)
     if not base_parent.exists():
         return {"error": f"Parent directory does not exist: {base_parent}"}
 
@@ -578,7 +641,59 @@ def introduce_architecture_impl(
         transform_code = None  # type: ignore[assignment]
 
     try:
+        # Directory-wide mode
+        if p.is_dir() or (out_path and target.is_dir()):
+            changed: list[dict[str, str]] = []
+            src_root = p if p.is_dir() else (target if target.is_dir() else p)
+            dst_root = Path(out_path) if out_path else src_root
+            for src in sorted(src_root.rglob("*.py")):
+                rel = src.relative_to(src_root)
+                dst = dst_root / rel
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                original = src.read_text()
+                rewritten: str | None = (
+                    transform_code(norm, original) if transform_code is not None else None
+                )  # type: ignore[call-arg]
+                post = rewritten or original
+                if post != original:
+                    if not dry_run:
+                        dst.write_text(post)
+                    diff = "".join(
+                        difflib.unified_diff(
+                            original.splitlines(keepends=True),
+                            post.splitlines(keepends=True),
+                            fromfile=str(src),
+                            tofile=str(dst),
+                        )
+                    )
+                    changed.append({"path": str(dst), "diff": diff})
+            if not changed:
+                # If no transforms occurred, create a new scaffold module in dst_root
+                snippet = get_snippet(norm)
+                if snippet:
+                    new_file = (Path(out_path) if out_path else src_root) / f"{norm}.py"
+                    if not dry_run:
+                        new_file.parent.mkdir(parents=True, exist_ok=True)
+                        new_file.write_text(snippet)
+                    diff = "".join(
+                        difflib.unified_diff(
+                            [],
+                            snippet.splitlines(keepends=True),
+                            fromfile=str(new_file),
+                            tofile=str(new_file),
+                        )
+                    )
+                    changed.append({"path": str(new_file), "diff": diff})
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "transformed-dir" if changed else "created-new",
+                "dry_run": dry_run,
+                "changes": changed,
+            }
+
         existing_path = p if p.exists() else (target if target.exists() else None)
+
         if existing_path is not None and transform_code is not None:
             original = existing_path.read_text()
             rewritten: str | None = transform_code(norm, original)  # type: ignore[call-arg]
