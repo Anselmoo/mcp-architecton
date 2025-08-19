@@ -481,7 +481,15 @@ def introduce_pattern_impl(
                 "changes": changed,
             }
 
-        existing_path = p if p.exists() else (target if target.exists() else None)
+        # Determine an existing FILE path (avoid directories triggering read_text errors)
+        existing_path = None
+        try:
+            if p.exists() and p.is_file():
+                existing_path = p
+            elif target.exists() and target.is_file():
+                existing_path = target
+        except Exception:
+            existing_path = None
         if existing_path is not None:
             original = existing_path.read_text()
             # Planner pre-pass (As-Is → To-Be)
@@ -692,7 +700,15 @@ def introduce_architecture_impl(
                 "changes": changed,
             }
 
-        existing_path = p if p.exists() else (target if target.exists() else None)
+        # Determine an existing FILE path (avoid directories triggering read_text errors)
+        existing_path = None
+        try:
+            if p.exists() and p.is_file():
+                existing_path = p
+            elif target.exists() and target.is_file():
+                existing_path = target
+        except Exception:
+            existing_path = None
 
         if existing_path is not None and transform_code is not None:
             original = existing_path.read_text()
