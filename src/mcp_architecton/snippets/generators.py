@@ -179,6 +179,18 @@ class Borg:
 
     def __init__(self):
         self.__dict__ = self._shared_state
+
+class SingletonBorg(Borg):
+
+    def __init__(self):
+        super().__init__()
+         if state:
+            self.state = state
+        else:
+            self.state = "default"
+
+    def __str__(self) -> str:
+        return self.state
 """
     ).strip()
 

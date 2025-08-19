@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import json
 import logging
 import shutil
@@ -14,12 +15,14 @@ from fastmcp import FastMCP  # type: ignore[import-not-found]
 
 from mcp_architecton.analysis.advice_loader import build_advice_maps
 from mcp_architecton.analysis.ast_utils import analyze_code_for_patterns
+from mcp_architecton.analysis.enforcement import ranked_enforcement_targets
 from mcp_architecton.detectors import registry as detector_registry
 
 # Implementor snippets are optional; keep the server resilient if not present.
 NAME_ALIASES: dict[str, str] = {}
 try:  # pragma: no cover - optional dependency
-    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES, get_snippet  # type: ignore
+    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
+    from mcp_architecton.snippets import get_snippet  # type: ignore
 
     NAME_ALIASES.update(_IMPL_ALIASES)
 except Exception:  # pragma: no cover
@@ -32,26 +35,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# Canonicalization helpers for free-form names
-_PATTERN_ALIASES: dict[str, str] = {
-    "template": "template method",
-    "template method": "template method",
-    "pubsub": "publish-subscribe",
-    "publish_subscribe": "publish-subscribe",
-    "di": "dependency injection",
-}
-
-_ARCH_ALIASES: dict[str, str] = {
-    "mvc": "mvc",
-    "hexagonal": "hexagonal architecture",
-    "ports and adapters": "hexagonal architecture",
-    "layered": "layered architecture",
-    "three tier": "three-tier architecture",
-    "3 tier": "three-tier architecture",
-    "3-tier": "three-tier architecture",
-    "3-tier architecture": "three-tier architecture",
-    "uow": "unit of work",
-}
+_PATTERN_ALIASES: dict[str, str] = NAME_ALIASES
+_ARCH_ALIASES: dict[str, str] = NAME_ALIASES
 
 
 # Lazy caches for dynamically built advice maps
@@ -84,130 +69,13 @@ app: FastMCP = FastMCP("mcp-architecton")
 def _ranked_enforcement_targets(
     indicators: list[dict[str, Any]], recs: list[str]
 ) -> list[tuple[str, str, int, list[str]]]:
-    """Return list of (name, category, weight, reasons) sorted by weight.
-
-    - name: canonical item name (pattern or architecture)
-    - category: "Pattern" or "Architecture"
-    - weight: aggregated severity score
-    - reasons: indicators contributing
-    """
-    sev: dict[str, int] = {
-        "dynamic_eval": 3,
-        "high_cc": 3,
-        "very_large_function": 3,
-        "low_mi": 2,
-        "large_file": 2,
-        "global_or_any_usage": 2,
-        "print_logging": 1,
-    }
-
-    indicator_targets: dict[str, list[tuple[str, int]]] = {
-        "high_cc": [
-            ("Strategy", 3),
-            ("Template Method", 2),
-            ("Chain of Responsibility", 2),
-            ("State", 2),
-            ("Command", 2),
-            ("Mediator", 1),
-            ("Visitor", 1),
-            ("Facade", 1),
-        ],
-        "very_large_function": [
-            ("Template Method", 3),
-            ("Strategy", 2),
-            ("Chain of Responsibility", 1),
-            ("Command", 1),
-        ],
-        "low_mi": [
-            ("Facade", 2),
-            ("Strategy", 2),
-            ("Mediator", 1),
-            ("Observer", 1),
-            ("Hexagonal Architecture", 1),
-            ("Clean Architecture", 1),
-        ],
-        "large_file": [
-            ("Layered Architecture", 3),
-            ("MVC", 2),
-            ("Hexagonal Architecture", 2),
-            ("Clean Architecture", 2),
-            ("Three-Tier Architecture", 2),
-            ("Facade", 1),
-        ],
-        "global_or_any_usage": [
-            ("Dependency Injection", 3),
-            ("Facade", 2),
-            ("Hexagonal Architecture", 1),
-            ("Service Layer", 1),
-        ],
-        "dynamic_eval": [
-            ("Factory Method", 3),
-            ("Abstract Factory", 2),
-            ("Strategy", 1),
-            ("Command", 1),
-            ("Proxy", 1),
-        ],
-        "print_logging": [
-            ("Hexagonal Architecture", 2),
-            ("Facade", 1),
-            ("Observer", 1),
-        ],
-    }
-
-    def add_target(
-        name: str, reasons: list[str], w: int, acc: dict[str, tuple[str, int, set[str]]]
-    ):
-        cat = "Pattern" if name in _pattern_advice() else "Architecture"
-        if name not in acc:
-            acc[name] = (cat, 0, set())
-        cat0, w0, rs = acc[name]
-        acc[name] = (cat0, w0 + w, rs.union(reasons))
-
-    acc: dict[str, tuple[str, int, set[str]]] = {}
-
-    for ind in indicators:
-        itype = str(ind.get("type", ""))
-        base = sev.get(itype, 1)
-        for target, bonus in indicator_targets.get(itype, []):
-            add_target(target, [itype], max(1, bonus or base), acc)
-
-    rec_text = " ".join(r.lower() for r in recs)
-    if rec_text:
-        for pat in _pattern_advice().keys():
-            if pat.lower() in rec_text:
-                add_target(pat, ["recommendation"], 1, acc)
-        for arch in _arch_advice().keys():
-            if arch.lower() in rec_text:
-                add_target(arch, ["recommendation"], 1, acc)
-        short_aliases = {
-            "mvc": "MVC",
-            "hexagonal": "Hexagonal Architecture",
-            "layered": "Layered Architecture",
-            "three tier": "Three-Tier Architecture",
-            "3 tier": "Three-Tier Architecture",
-            "ports and adapters": "Hexagonal Architecture",
-            "cqrs": "CQRS",
-            "uow": "Unit of Work",
-            "unit of work": "Unit of Work",
-            "repo": "Repository",
-            "repository": "Repository",
-            "service layer": "Service Layer",
-            "message bus": "Message Bus",
-            "domain events": "Domain Events",
-            "pubsub": "Publish-Subscribe",
-            "publish-subscribe": "Publish-Subscribe",
-            "di": "Dependency Injection",
-            "borg": "Borg",
-        }
-        for key, canonical in short_aliases.items():
-            if key in rec_text:
-                add_target(canonical, ["recommendation"], 1, acc)
-
-    items: list[tuple[str, str, int, list[str]]] = [
-        (name, cat, weight, sorted(list(reasons))) for name, (cat, weight, reasons) in acc.items()
-    ]
-    items.sort(key=lambda t: (-t[2], t[0]))
-    return items
+    return ranked_enforcement_targets(
+        indicators,
+        recs,
+        _pattern_advice(),
+        _arch_advice(),
+        NAME_ALIASES,
+    )
 
 
 def _thresholded_enforcement(
@@ -269,67 +137,47 @@ def _thresholded_enforcement(
     return {"results": results}
 
 
-def _canonical_pattern_name(name: str) -> str | None:
-    key = name.strip()
-    if not key:
-        return None
-    low = key.lower()
-    # first, alias normalization
-    alias = _PATTERN_ALIASES.get(low)
-    if alias:
-        low = alias
-    # find matching key case-insensitively in advice
-    for k in _pattern_advice().keys():
-        if k.lower() == low:
-            return k
-    # also try title-case for simple names
-    titled = low.title()
-    for k in _pattern_advice().keys():
-        if k == titled:
-            return k
-    return None
+def _canonical_pattern_name(name: str | None) -> str:
+    """Return a normalized canonical pattern name using alias map when available."""
+    if not name:
+        return ""
+    key = name.strip().lower()
+    return _PATTERN_ALIASES.get(key, key)
 
 
-def _canonical_arch_name(name: str) -> str | None:
-    key = name.strip()
-    if not key:
-        return None
-    low = key.lower()
-    alias = _ARCH_ALIASES.get(low)
-    if alias:
-        low = alias
-    for k in _arch_advice().keys():
-        if k.lower() == low:
-            return k
-    # try simple title-case
-    titled = low.title()
-    for k in _arch_advice().keys():
-        if k == titled:
-            return k
-    return None
+def _canonical_arch_name(name: str | None) -> str:
+    """Return a normalized canonical architecture name using alias map when available."""
+    if not name:
+        return ""
+    key = name.strip().lower()
+    return _ARCH_ALIASES.get(key, key)
 
 
 def list_patterns_impl() -> list[dict[str, Any]]:
-    """List available design patterns recognized by the server."""
-    # lazy load catalog
+    """List pattern entries from the catalog (non-architectures)."""
     catalog_path = Path(__file__).resolve().parents[2] / "data" / "patterns" / "catalog.json"
     if not catalog_path.exists():
         return []
-    data = json.loads(catalog_path.read_text())
-    return data.get("patterns", [])
+    try:
+        data = json.loads(catalog_path.read_text())
+    except Exception:  # noqa: BLE001
+        return []
+    patterns: list[dict[str, Any]] = data.get("patterns", [])
+    return [p for p in patterns if p.get("category") != "Architecture"]
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Analyze provided code or files to detect design patterns.
+    """Analyze code or files and return design pattern findings.
 
-    Either pass a code string, or a list of file paths (absolute or relative).
+    Uses AST-based detectors via analyze_code_for_patterns.
     """
     if not code and not files:
         return {"error": "Provide 'code' or 'files'"}
 
-    texts: list[tuple[str, str]] = []  # (path_label, text)
+    texts: list[tuple[str, str]] = []
     if code:
         texts.append(("<input>", code))
     if files:
@@ -342,7 +190,11 @@ def analyze_patterns_impl(
 
     findings: list[dict[str, Any]] = []
     for label, text in texts:
-        results = analyze_code_for_patterns(text, detector_registry)
+        try:
+            results = analyze_code_for_patterns(text, detector_registry)
+        except Exception as exc:  # noqa: BLE001
+            findings.append({"source": label, "error": str(exc)})
+            continue
         for r in results:
             r["source"] = label
             findings.append(r)
@@ -425,49 +277,63 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                 p.write_text(code)
                 targets.append(str(p))
             if files:
-                targets.extend([str(Path(f)) for f in files])
-            if targets:
-                cmd: list[str] = [ruff_exe, "check", "--quiet", "--output-format", "json", *targets]
-                proc = subprocess.run(cmd, capture_output=True, text=True)
-                out = proc.stdout.strip()
-                data: list[dict[str, Any]] = []
-                if out:
+                for f in files:
                     try:
-                        data = cast(list[dict[str, Any]], json.loads(out))
-                    except Exception as exc:  # noqa: BLE001
-                        ruff_out = {"error": f"Failed to parse ruff JSON: {exc}", "raw": out[:2000]}
-                    else:
-                        per_file: dict[str, dict[str, Any]] = {}
-                        summary: dict[str, int] = {}
-                        for item in data:
-                            filename = str(item.get("filename", ""))
-                            code_val = str(item.get("code", ""))
-                            pf = per_file.setdefault(filename, {"issues": [], "counts": {}})
-                            pf["issues"].append(item)
-                            counts = cast(dict[str, int], pf["counts"])  # type: ignore[assignment]
-                            counts[code_val] = counts.get(code_val, 0) + 1
-                            summary[code_val] = summary.get(code_val, 0) + 1
+                        if Path(f).is_file():
+                            targets.append(f)
+                    except Exception:
+                        pass
+            if targets:
+                proc = subprocess.run(
+                    [ruff_exe, "check", "--format", "json", *targets],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode in (0, 1):  # 1 indicates lint findings
+                    try:
+                        data = json.loads(proc.stdout or "[]")
+                        # Aggregate by file path and rule code
+                        agg: dict[str, dict[str, int]] = {}
+                        items_list: list[dict[str, Any]] = (
+                            cast(list[dict[str, Any]], data) if isinstance(data, list) else []
+                        )
+                        for item in items_list:
+                            try:
+                                fpath = str(item.get("filename", ""))
+                                code_key = str(item.get("code", ""))
+                                if fpath and code_key:
+                                    counts_for_file = agg.setdefault(fpath, {})
+                                    counts_for_file[code_key] = counts_for_file.get(code_key, 0) + 1
+                            except Exception:
+                                continue
                         ruff_out = {
                             "results": [
-                                {"file": f, "counts": v["counts"], "issues": v["issues"]}
-                                for f, v in sorted(per_file.items())
-                            ],
-                            "summary": summary,
-                            "exit_code": proc.returncode,
+                                {"file": fp, "counts": counts} for fp, counts in sorted(agg.items())
+                            ]
                         }
+                    except Exception as exc:  # noqa: BLE001
+                        ruff_out = {"error": f"ruff parse error: {exc}"}
+                else:
+                    ruff_out = {"error": proc.stderr.strip() or "ruff failed"}
         finally:
             if tmp_dir:
-                shutil.rmtree(tmp_dir, ignore_errors=True)
+                try:
+                    shutil.rmtree(tmp_dir)
+                except Exception:
+                    pass
 
-    return {"metrics": results, "ruff": ruff_out}
+    return {"results": results, "ruff": ruff_out}
 
 
 def list_architectures_impl() -> list[dict[str, Any]]:
-    """List architecture entries from the catalog."""
+    """List recognized software architectures from the catalog."""
     catalog_path = Path(__file__).resolve().parents[2] / "data" / "patterns" / "catalog.json"
     if not catalog_path.exists():
         return []
-    data = json.loads(catalog_path.read_text())
+    try:
+        data = json.loads(catalog_path.read_text())
+    except Exception:  # noqa: BLE001
+        return []
     patterns: list[dict[str, Any]] = data.get("patterns", [])
     return [p for p in patterns if p.get("category") == "Architecture"]
 
@@ -476,47 +342,205 @@ def analyze_architectures_impl(
     code: str | None = None,
     files: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Analyze code or files but only return architecture findings.
+    """Detect architecture styles in a code string or Python files (provide code or files)."""
+    if not code and not files:
+        return {"error": "Provide 'code' or 'files'"}
 
-    Uses the same detectors; filters to known architecture names from the catalog.
-    """
-    arch_entries = {p.get("name") for p in list_architectures_impl()}
-    base: dict[str, Any] = analyze_patterns_impl(code=code, files=files)
-    findings_raw: list[dict[str, Any]] = [
-        f for f in base.get("findings", []) if isinstance(f, dict)
-    ]
-    arch_findings: list[dict[str, Any]] = [f for f in findings_raw if f.get("name") in arch_entries]
-    return {"findings": arch_findings}
+    # Build name set from catalog; fallback to heuristic names
+    arch_entries = list_architectures_impl()
+    arch_names: set[str] = {str(e.get("name", "")) for e in arch_entries if e.get("name")}
+    if not arch_names:
+        arch_names = {
+            "Layered Architecture",
+            "Hexagonal Architecture",
+            "Clean Architecture",
+            "3-Tier Architecture",
+            "Repository",
+            "Service Layer",
+            "Unit of Work",
+            "Message Bus",
+            "Domain Events",
+            "CQRS",
+            "Front Controller",
+            "Model-View-Controller (MVC)",
+        }
+
+    texts: list[tuple[str, str]] = []
+    if code:
+        texts.append(("<input>", code))
+    if files:
+        for f in files:
+            p = Path(f)
+            try:
+                texts.append((str(p), p.read_text()))
+            except Exception as exc:  # noqa: BLE001
+                texts.append((str(p), f"<read-error: {exc}>"))
+
+    findings: list[dict[str, Any]] = []
+    for label, text in texts:
+        try:
+            all_results = analyze_code_for_patterns(text, detector_registry)
+        except Exception as exc:  # noqa: BLE001
+            findings.append({"source": label, "error": str(exc)})
+            continue
+        for r in all_results:
+            name = str(r.get("name", ""))
+            if name in arch_names:
+                r["source"] = label
+                findings.append(r)
+
+    return {"findings": findings}
 
 
-def introduce_pattern_impl(name: str, module_path: str) -> dict[str, Any]:
-    """Introduce a pattern scaffold into the given module path.
-
-    Currently supports: Singleton, Strategy, and selected architecture helpers (Repository, Unit of Work, Service Layer, Message Bus, Domain Events, CQRS).
-    """
-    # Delegate alias normalization to implementors.get_snippet for freshness
-    name_norm = name.strip()
+def introduce_pattern_impl(
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
+) -> dict[str, Any]:
+    """Create/append a scaffold for the named pattern into module_path with transforms and diff."""
+    name_norm = _canonical_pattern_name(name)
     p = Path(module_path)
-    if not p.parent.exists():
-        return {"error": f"Parent directory does not exist: {p.parent}"}
-
-    snippet = get_snippet(name_norm)
-    if snippet is None:
-        return {"error": f"Pattern not supported: {name}"}
+    target = Path(out_path) if out_path else p
+    base_parent = target.parent if out_path else p.parent
+    if not base_parent.exists():
+        return {"error": f"Parent directory does not exist: {base_parent}"}
 
     try:
-        if p.exists():
-            original = p.read_text()
-            p.write_text(original + ("\n\n" if not original.endswith("\n") else "\n") + snippet)
+        from mcp_architecton.snippets import transform_code  # type: ignore
+        from mcp_architecton.snippets.transforms import (  # type: ignore
+            apply_plan,
+            plan_refactor,
+        )
+    except Exception:
+        transform_code = None  # type: ignore[assignment]
+        plan_refactor = None  # type: ignore[assignment]
+        apply_plan = None  # type: ignore[assignment]
+
+    try:
+        existing_path = p if p.exists() else (target if target.exists() else None)
+        if existing_path is not None:
+            original = existing_path.read_text()
+            # Planner pre-pass (As-Is → To-Be)
+            if plan_refactor and apply_plan:
+                try:
+                    plan = plan_refactor(original, goals=[name_norm])  # type: ignore[misc]
+                    planned = apply_plan(original, plan)  # type: ignore[misc]
+                except Exception:
+                    planned = None
+            else:
+                planned = None
+            # Named transform pass
+            if transform_code is not None:
+                rewritten: str | None = transform_code(name_norm, planned or original)  # type: ignore[call-arg]
+            else:
+                rewritten = planned
+            if isinstance(rewritten, str) and rewritten.strip() and rewritten != original:
+                if transform_code is not None:
+                    post = cast(str, (transform_code(name_norm, rewritten) or rewritten))  # type: ignore[call-arg]
+                else:
+                    post = rewritten
+                if not dry_run:
+                    target.write_text(post)
+                diff = "".join(
+                    difflib.unified_diff(
+                        original.splitlines(keepends=True),
+                        post.splitlines(keepends=True),
+                        fromfile=str(existing_path),
+                        tofile=str(target),
+                    )
+                )
+                return {
+                    "status": "ok",
+                    "written": str(target),
+                    "mode": "transformed" if not out_path else "transformed-new",
+                    "dry_run": dry_run,
+                    "diff": diff,
+                }
+
+        # No transform-only changes; proceed to scaffold path
+        snippet = get_snippet(name_norm)
+        if snippet is None:
+            return {"error": f"Pattern not supported: {name}"}
+
+        if existing_path is not None:
+            original = existing_path.read_text()
+            updated = original + ("\n\n" if not original.endswith("\n") else "\n") + snippet
+            # Planner + transform after append
+            if plan_refactor and apply_plan:
+                try:
+                    plan2 = plan_refactor(updated, goals=[name_norm])  # type: ignore[misc]
+                    planned2 = apply_plan(updated, plan2)  # type: ignore[misc]
+                except Exception:
+                    planned2 = None
+            else:
+                planned2 = None
+            post = (
+                cast(str, (transform_code(name_norm, planned2 or updated) or (planned2 or updated)))
+                if transform_code
+                else (planned2 or updated)
+            )  # type: ignore[call-arg]
+            if not dry_run:
+                target.write_text(post)
+            diff = "".join(
+                difflib.unified_diff(
+                    original.splitlines(keepends=True),
+                    post.splitlines(keepends=True),
+                    fromfile=str(existing_path),
+                    tofile=str(target),
+                )
+            )
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "scaffold-appended" if not out_path else "scaffold-appended-new",
+                "dry_run": dry_run,
+                "diff": diff,
+            }
         else:
-            p.write_text(snippet)
+            # New file creation; normalize using planner + transform
+            if plan_refactor and apply_plan:
+                try:
+                    plan0 = plan_refactor(snippet, goals=[name_norm])  # type: ignore[misc]
+                    planned0 = apply_plan(snippet, plan0)  # type: ignore[misc]
+                except Exception:
+                    planned0 = None
+            else:
+                planned0 = None
+            post = (
+                cast(str, (transform_code(name_norm, planned0 or snippet) or (planned0 or snippet)))
+                if transform_code
+                else (planned0 or snippet)
+            )  # type: ignore[call-arg]
+            if not dry_run:
+                target.write_text(post)
+            diff = "".join(
+                difflib.unified_diff(
+                    [],
+                    post.splitlines(keepends=True),
+                    fromfile=str(target),
+                    tofile=str(target),
+                )
+            )
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "created" if not out_path else "created-new",
+                "dry_run": dry_run,
+                "diff": diff,
+            }
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 
-    return {"status": "ok", "written": str(p)}
+    return {"status": "ok", "written": str(target), "dry_run": dry_run}
 
 
-def introduce_architecture_impl(name: str, module_path: str) -> dict[str, Any]:
+def introduce_architecture_impl(
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
+) -> dict[str, Any]:
     """Introduce an architecture helper scaffold into the given module path.
 
     Supports helper snippets like Repository, Unit of Work, Service Layer,
@@ -542,23 +566,90 @@ def introduce_architecture_impl(name: str, module_path: str) -> dict[str, Any]:
     norm = key
 
     p = Path(module_path)
-    if not p.parent.exists():
-        return {"error": f"Parent directory does not exist: {p.parent}"}
+    target = Path(out_path) if out_path else p
+    base_parent = target.parent if out_path else p.parent
+    if not base_parent.exists():
+        return {"error": f"Parent directory does not exist: {base_parent}"}
 
-    snippet = get_snippet(norm)
-    if snippet is None:
-        return {"error": f"Architecture not supported: {name}"}
+    # Try transform first
+    try:
+        from mcp_architecton.snippets import transform_code  # type: ignore
+    except Exception:
+        transform_code = None  # type: ignore[assignment]
 
     try:
-        if p.exists():
-            original = p.read_text()
-            p.write_text(original + ("\n\n" if not original.endswith("\n") else "\n") + snippet)
+        existing_path = p if p.exists() else (target if target.exists() else None)
+        if existing_path is not None and transform_code is not None:
+            original = existing_path.read_text()
+            rewritten: str | None = transform_code(norm, original)  # type: ignore[call-arg]
+            if isinstance(rewritten, str) and rewritten.strip() and rewritten != original:
+                post = cast(str, (transform_code(norm, rewritten) or rewritten))  # type: ignore[call-arg]
+                if not dry_run:
+                    target.write_text(post)
+                diff = "".join(
+                    difflib.unified_diff(
+                        original.splitlines(keepends=True),
+                        post.splitlines(keepends=True),
+                        fromfile=str(existing_path),
+                        tofile=str(target),
+                    )
+                )
+                return {
+                    "status": "ok",
+                    "written": str(target),
+                    "mode": "transformed" if not out_path else "transformed-new",
+                    "dry_run": dry_run,
+                    "diff": diff,
+                }
+
+        snippet = get_snippet(norm)
+        if snippet is None:
+            return {"error": f"Architecture not supported: {name}"}
+
+        if existing_path is not None:
+            original = existing_path.read_text()
+            updated = original + ("\n\n" if not original.endswith("\n") else "\n") + snippet
+            post = cast(str, (transform_code(norm, updated) or updated))  # type: ignore[call-arg]
+            if not dry_run:
+                target.write_text(post)
+            diff = "".join(
+                difflib.unified_diff(
+                    original.splitlines(keepends=True),
+                    post.splitlines(keepends=True),
+                    fromfile=str(existing_path),
+                    tofile=str(target),
+                )
+            )
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "scaffold-appended" if not out_path else "scaffold-appended-new",
+                "dry_run": dry_run,
+                "diff": diff,
+            }
         else:
-            p.write_text(snippet)
+            post = cast(str, (transform_code(norm, snippet) or snippet))  # type: ignore[call-arg]
+            if not dry_run:
+                target.write_text(post)
+            diff = "".join(
+                difflib.unified_diff(
+                    [],
+                    post.splitlines(keepends=True),
+                    fromfile=str(target),
+                    tofile=str(target),
+                )
+            )
+            return {
+                "status": "ok",
+                "written": str(target),
+                "mode": "created" if not out_path else "created-new",
+                "dry_run": dry_run,
+                "diff": diff,
+            }
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 
-    return {"status": "ok", "written": str(p)}
+    return {"status": "ok", "written": str(target), "dry_run": dry_run}
 
 
 def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
@@ -1035,23 +1126,45 @@ def analyze_architectures(
 
 
 @app.tool(name="introduce-pattern")
-def tool_introduce_pattern(name: str, module_path: str) -> dict[str, Any]:
-    """Create/append a scaffold for the named pattern into module_path (file path)."""
-    return introduce_pattern_impl(name=name, module_path=module_path)
+def tool_introduce_pattern(
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+) -> dict[str, Any]:
+    """Create/append a scaffold for the named pattern into module_path.
+
+    Optional: dry_run (no writes) and out_path to write to a different file (e.g., refactor-as-new).
+    """
+    return introduce_pattern_impl(
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+    )
 
 
-def introduce_pattern(name: str, module_path: str) -> dict[str, Any]:
-    return introduce_pattern_impl(name=name, module_path=module_path)
+def introduce_pattern(
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+) -> dict[str, Any]:
+    return introduce_pattern_impl(
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+    )
 
 
 @app.tool(name="introduce-architecture")
-def tool_introduce_architecture(name: str, module_path: str) -> dict[str, Any]:
-    """Create/append a scaffold for the named architecture helper into module_path (file path)."""
-    return introduce_architecture_impl(name=name, module_path=module_path)
+def tool_introduce_architecture(
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+) -> dict[str, Any]:
+    """Create/append a scaffold for the named architecture helper into module_path.
+
+    Optional: dry_run (no writes) and out_path to write to a different file.
+    """
+    return introduce_architecture_impl(
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+    )
 
 
-def introduce_architecture(name: str, module_path: str) -> dict[str, Any]:
-    return introduce_architecture_impl(name=name, module_path=module_path)
+def introduce_architecture(
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+) -> dict[str, Any]:
+    return introduce_architecture_impl(
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+    )
 
 
 @app.tool(name="suggest-refactor-patterns")

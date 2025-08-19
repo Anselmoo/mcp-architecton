@@ -59,7 +59,7 @@ Alternatively, add `.vscode/mcp.json`:
 - analyze-architectures: detect architecture signals
 - suggest-refactor: propose changes towards canonical implementations (patterns)
 - suggest-architecture-refactor: targeted advice per architecture
-- introduce-pattern: scaffold a chosen pattern
+- introduce-pattern: transform-first; falls back to scaffold; returns unified diff. Supports {dry_run, out_path}
 - analyze-paths: scan files/dirs/globs for findings; optional metrics per file
 
 ### Examples
@@ -73,11 +73,18 @@ uv run mcp-architecton  # then call tool analyze_metrics with {"files": ["src/**
 
 # Pattern-only proposal
 uv run mcp-architecton  # then call tool propose_patterns with {"files": ["module.py"]}
+
+# Introduce a Strategy into a file without writing (dry-run)
+uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "dry_run": true}
+
+# Refactor-as-new: write the change to a different path and get the diff
+uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "out_path": "demo/refactored_demo_file_large.py"}
 ```
 
 ### Notes
 
 - Ruff-only: Dead-code scanning via Vulture has been removed for speed; we keep Ruff integrated in metrics.
+- Introduce tools apply generic AST-family transforms both before and after scaffolding to normalize imports and future annotations and always return a unified diff.
 - Overlap clarification: propose-architecture gives prioritized, ranked suggestions using indicators and advice; suggest-architecture-refactor is a lighter, direct advice emitter for already detected architectures.
 
 ## License

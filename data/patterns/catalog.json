@@ -6,7 +6,7 @@
       "description": "Ensure a class has only one instance and provide a global point of access.",
       "refs": [
         "https://refactoring.guru/design-patterns/singleton",
-        "https://github.com/faif/python-patterns/tree/master/patterns/creational"
+        "https://www.geeksforgeeks.org/python/singleton-pattern-in-python-a-complete-guide/"
       ]
     },
     {
@@ -15,7 +15,7 @@
       "description": "Define a one-to-many dependency so that when one object changes state, all dependents are notified.",
       "refs": [
         "https://refactoring.guru/design-patterns/observer",
-        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral"
+        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral/observer.py"
       ]
     },
     {
@@ -24,7 +24,7 @@
       "description": "Define an interface for creating an object, but let subclasses alter the type of objects that will be created.",
       "refs": [
         "https://refactoring.guru/design-patterns/factory-method",
-        "https://github.com/faif/python-patterns/tree/master/patterns/creational"
+        "https://github.com/faif/python-patterns/tree/master/patterns/creational/factory.py"
       ]
     },
     {
@@ -33,7 +33,7 @@
       "description": "Allow objects with incompatible interfaces to collaborate by wrapping a class with a compatible interface.",
       "refs": [
         "https://refactoring.guru/design-patterns/adapter",
-        "https://github.com/faif/python-patterns/tree/master/patterns/structural"
+        "https://github.com/faif/python-patterns/tree/master/patterns/structural/adapter.py"
       ]
     },
     {
@@ -42,7 +42,7 @@
       "description": "Define a family of algorithms, encapsulate each one, and make them interchangeable.",
       "refs": [
         "https://refactoring.guru/design-patterns/strategy",
-        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral"
+        "https://github.com/faif/python-patterns/tree/master/patterns/behavioral/strategy.py"
       ]
     },
     {
@@ -60,7 +60,7 @@
       "description": "Ports and adapters isolate the domain from external concerns, enabling easy substitution of UIs and infrastructure.",
       "refs": [
         "https://alistair.cockburn.us/hexagonal-architecture/",
-        "https://www.informit.com/articles/article.aspx?p=2805348"
+        "https://tsh.io/blog/hexagonal-architecture/"
       ]
     },
     {
@@ -76,19 +76,28 @@
       "name": "Microservices",
       "category": "Architecture",
       "description": "An approach to developing a single application as a suite of small services, each running in its own process and communicating with lightweight mechanisms.",
-      "refs": ["https://martinfowler.com/articles/microservices.html"]
+      "refs": [
+        "https://martinfowler.com/articles/microservices.html",
+        "https://microservices.io/patterns/microservices.html"
+      ]
     },
     {
       "name": "Event-Driven Architecture",
       "category": "Architecture",
       "description": "A style built around asynchronous event production, detection, consumption, and reaction.",
-      "refs": ["https://martinfowler.com/articles/201701-event-driven.html"]
+      "refs": [
+        "https://martinfowler.com/articles/201701-event-driven.html",
+        "https://learn.microsoft.com/azure/architecture/guide/architecture-styles/event-driven"
+      ]
     },
     {
       "name": "CQRS",
       "category": "Architecture",
       "description": "Command Query Responsibility Segregation separates read and write models for scalability and clarity.",
-      "refs": ["https://martinfowler.com/bliki/CQRS.html"]
+      "refs": [
+        "https://martinfowler.com/bliki/CQRS.html",
+        "https://learn.microsoft.com/azure/architecture/patterns/cqrs"
+      ]
     },
     {
       "name": "Bridge",
@@ -338,7 +347,8 @@
       "category": "Creational",
       "description": "Share state across instances by assigning to the __dict__ of each instance.",
       "refs": [
-        "https://github.com/faif/python-patterns/blob/master/patterns/creational/borg.py"
+        "https://github.com/faif/python-patterns/blob/master/patterns/creational/borg.py",
+        "https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html"
       ]
     },
     {

@@ -14,7 +14,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["fastmcp>=0.3.1", "radon>=5.1", "ruff>=0.12.9"]
+dependencies = ["fastmcp>=0.3.1", "libcst>=1.8.2", "radon>=5.1", "ruff>=0.12.9"]
 
 
 [project.scripts]
@@ -33,12 +33,29 @@ target-version = "py310"
 select = ["E", "F", "I"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"demo/*.py" = ["I001"]
+
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = "-q --cov=src/mcp_architecton --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml"
 pythonpath = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/mcp_architecton"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == \"__main__\":",
+    'def __repr__\(\):',
+    'def __str__\(\):',
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_architecton"]
 
 [dependency-groups]
-dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1"]
+dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "tox>=4.28.4", "tox-uv>=1.28.0"]

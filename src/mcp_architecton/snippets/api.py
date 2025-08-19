@@ -3,11 +3,13 @@
 Public functions:
 - get_snippet(name) -> str | None
 - register_generator(fn, keys?)
+- register_transformer(fn, keys?)
+- transform_code(name, source) -> str | None
 """
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Callable, Optional, cast
 
 from .aliases import NAME_ALIASES
 from .catalog import CatalogEntry, find_catalog_entry
@@ -15,6 +17,7 @@ from .generators import BUILTINS, Generator
 
 # Mutable registry layering custom generators over built-ins
 _GENERATORS: dict[str, list[Generator]] = {k: [v] for k, v in BUILTINS.items()}
+_TRANSFORMERS: dict[str, list[Callable[[str], Optional[str]]]] = {}
 
 
 def register_generator(fn: Generator, keys: list[str] | None = None) -> None:
@@ -31,6 +34,20 @@ def register_generator(fn: Generator, keys: list[str] | None = None) -> None:
         _GENERATORS.setdefault(k, []).append(fn)
 
 
+def register_transformer(fn: Callable[[str], Optional[str]], keys: list[str] | None = None) -> None:
+    """Register a source-to-source transformer for one or more keys.
+
+    Transformers receive the full source code and may return a rewritten source
+    string. Return None to indicate "no change" so other transformers can try
+    or the caller can fall back to scaffolds.
+    """
+    if keys is None:
+        _TRANSFORMERS.setdefault("*", []).append(fn)
+        return
+    for k in keys:
+        _TRANSFORMERS.setdefault(k, []).append(fn)
+
+
 def _run_generators(key: str, name: str) -> str | None:
     gens = _GENERATORS.get(key, []) + _GENERATORS.get("*", [])
     entry: Optional[CatalogEntry] = find_catalog_entry(name) or None
@@ -42,6 +59,25 @@ def _run_generators(key: str, name: str) -> str | None:
         except Exception:
             # best-effort; ignore generator failures
             continue
+    return None
+
+
+def transform_code(name: str, source: str) -> str | None:
+    """Attempt to transform source in-place for the given pattern/architecture.
+
+    Resolution order mimics generators: alias normalize -> key-specific
+    transformers then global ones. The first non-None result is returned.
+    """
+    key_raw = (name or "").strip().lower()
+    key = NAME_ALIASES.get(key_raw, key_raw)
+    fns = _TRANSFORMERS.get(key, []) + _TRANSFORMERS.get("*", [])
+    for fn in fns:
+        try:
+            out = fn(source)
+        except Exception:
+            continue
+        if isinstance(out, str) and out.strip():
+            return out
     return None
 
 
@@ -115,4 +151,23 @@ def get_snippet(name: str) -> str | None:
     )
 
 
-__all__ = ["get_snippet", "register_generator"]
+# Best-effort: load and register built-in transforms when available
+try:  # pragma: no cover - optional
+    from .transforms import BUILTIN_TRANSFORMS as _BUILTIN_TRANSFORMS  # type: ignore
+
+    _bt: dict[str, list[Callable[[str], Optional[str]]]] = cast(
+        dict[str, list[Callable[[str], Optional[str]]]], _BUILTIN_TRANSFORMS
+    )
+    for k, fns in _bt.items():
+        for fn in fns:
+            register_transformer(fn, [k])
+except Exception:
+    pass
+
+
+__all__ = [
+    "get_snippet",
+    "register_generator",
+    "register_transformer",
+    "transform_code",
+]
