@@ -40,7 +40,7 @@ def analyze_patterns_impl(
             p = Path(f)
             try:
                 texts.append((str(p), p.read_text()))
-            except Exception as exc:  # noqa: BLE001
+            except (FileNotFoundError, PermissionError, OSError) as exc:
                 texts.append((str(p), f"<read-error: {exc}>"))
 
     findings: list[dict[str, Any]] = []

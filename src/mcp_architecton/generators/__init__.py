@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ..catalog import CatalogEntry
+from ..snippets.catalog import CatalogEntry
 from .architectures import ARCH_GENERATORS
 from .patterns import PATTERN_GENERATORS
 

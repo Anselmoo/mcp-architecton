@@ -1,7 +1,8 @@
 """Tests for mcp_architecton.services.scan module."""
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
+
 from mcp_architecton.services.scan import scan_anti_patterns_impl
 
 

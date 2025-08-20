@@ -4,9 +4,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
-from mcp_architecton.services.patterns import list_patterns_impl, analyze_patterns_impl
+from mcp_architecton.services.patterns import analyze_patterns_impl, list_patterns_impl
 
 
 class TestListPatterns(unittest.TestCase):

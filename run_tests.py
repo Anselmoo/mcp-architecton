@@ -5,6 +5,7 @@ import sys
 import unittest
 from pathlib import Path
 
+
 def run_tests():
     """Run all tests using unittest discovery."""
     # Add src to path

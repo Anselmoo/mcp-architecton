@@ -1,7 +1,6 @@
 """Tests for mcp_architecton.services.intro module (excluding introduce_impl)."""
 
 import unittest
-from unittest.mock import patch, Mock
 
 # Note: Direct imports cause circular dependency issues, so we test indirectly
 

@@ -85,7 +85,7 @@ def introduce_impl(
         for p in sorted(base.rglob("*.py")):
             try:
                 before = p.read_text()
-            except Exception as exc:  # noqa: BLE001
+            except (FileNotFoundError, PermissionError, OSError) as exc:
                 changes.append({"file": str(p), "error": str(exc)})
                 continue
             changed, after = _apply_to_text(name, before)
@@ -116,7 +116,7 @@ def introduce_impl(
     # Single file
     try:
         before = base.read_text()
-    except Exception as exc:  # noqa: BLE001
+    except (FileNotFoundError, PermissionError, OSError) as exc:
         return {"status": "error", "error": str(exc), "target": str(base)}
     changed, after = _apply_to_text(name, before)
     if not changed:

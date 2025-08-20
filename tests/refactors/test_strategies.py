@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from mcp_architecton.refactors.strategies import (
-    _canon,
     _append_snippet_marker,
+    _canon,
     _safe_libcst_insert_class,
     _safe_libcst_insert_function,
     register_strategy,

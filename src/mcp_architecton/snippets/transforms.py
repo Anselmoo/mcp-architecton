@@ -133,7 +133,7 @@ def _normalize_future_annotations(source: str) -> str | None:
                 ):
                     # approximate insertion after docstring line span
                     insert_at = 1
-        except Exception:
+        except (cst.ParserError, AttributeError, IndexError):
             insert_at = 0
     # Insert canonical import line with newline
     canonical = target + "\n"
@@ -176,7 +176,7 @@ def _organize_imports(source: str) -> str | None:
             for i, node in enumerate(rb):
                 try:
                     text = str(node)
-                except Exception:
+                except (AttributeError, TypeError):  # Node conversion errors
                     continue
                 if text.strip().startswith("from __future__ import annotations"):
                     rb.insert(i + 1, import_line)
@@ -185,12 +185,12 @@ def _organize_imports(source: str) -> str | None:
             if not inserted:
                 rb.insert(0, import_line)
             return str(rb)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):  # RedBaron operation errors
             return None
 
     try:
         mod = parse_module(source)
-    except Exception:
+    except (cst.ParserError, ValueError):  # LibCST parsing errors
         return None
 
     ctx = CodemodContext()
@@ -329,7 +329,7 @@ def apply_plan(source: str, plan: RefactorPlan) -> str | None:
             continue
         try:
             out = fn(current)
-        except Exception:
+        except (TypeError, ValueError, AttributeError):  # Transform function errors
             continue
         if isinstance(out, str) and out != current:
             current = out

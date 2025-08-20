@@ -26,7 +26,7 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
             res = detector(tree, source)
             if res:
                 findings.extend(res)
-        except Exception as exc:  # noqa: BLE001
+        except (AttributeError, TypeError, ValueError) as exc:
             findings.append(
                 {
                     "name": name,

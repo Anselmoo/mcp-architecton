@@ -30,7 +30,7 @@ def scan_anti_patterns_impl(
             p = Path(f)
             try:
                 texts.append((str(p), p.read_text()))
-            except Exception as exc:  # noqa: BLE001
+            except (FileNotFoundError, PermissionError, OSError) as exc:
                 texts.append((str(p), f"<read-error: {exc}>"))
 
     def _indicators_for_text(text: str) -> tuple[list[dict[str, Any]], list[str]]:
@@ -43,7 +43,8 @@ def scan_anti_patterns_impl(
             if hi_cc:
                 ind.append({"type": "high_cc", "count": len(hi_cc)})
                 recs.append("Strategy or Template Method to split complex logic")
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
+            # Skip complexity analysis for unparseable or invalid code
             pass
 
         # Maintainability index (single score)
@@ -53,9 +54,11 @@ def scan_anti_patterns_impl(
                 if float(mi_val) < 50.0:
                     ind.append({"type": "low_mi", "mi": mi_val})
                     recs.append("Refactor to smaller functions; apply Strategy/Facade")
-            except Exception:
+            except (TypeError, ValueError):
+                # Skip if MI value is not numeric
                 pass
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
+            # Skip MI analysis for unparseable or invalid code  
             pass
 
         # Raw metrics
@@ -66,7 +69,8 @@ def scan_anti_patterns_impl(
             if isinstance(loc, int) and loc > 1000:
                 ind.append({"type": "large_file", "loc": loc})
                 recs.append("Split module by responsibility; consider Layered/MVC separation")
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
+            # Skip raw analysis for unparseable or invalid code
             pass
 
         # Heuristic anti-signals
@@ -132,7 +136,7 @@ def scan_anti_patterns_impl(
                     "recommendations": recommendations,
                 }
             )
-        except Exception as exc:  # noqa: BLE001
+        except (SyntaxError, ValueError, AttributeError, TypeError) as exc:
             results.append({"source": label, "error": str(exc)})
 
     return {"results": results}
