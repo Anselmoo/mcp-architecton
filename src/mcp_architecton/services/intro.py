@@ -21,7 +21,7 @@ def _apply_to_text(name: str, text: str) -> Tuple[bool, str]:
             out = _strategy_transform(name, text)
             if isinstance(out, str) and out != text:
                 return True, out
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             pass
     # Then snippets transform
     if _snippet_transform is not None:
@@ -29,7 +29,7 @@ def _apply_to_text(name: str, text: str) -> Tuple[bool, str]:
             out = _snippet_transform(name, text)
             if isinstance(out, str) and out != text:
                 return True, out
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             pass
     return False, text
 
@@ -37,14 +37,14 @@ def _apply_to_text(name: str, text: str) -> Tuple[bool, str]:
 def _append_snippet_if_missing(name: str, text: str) -> Tuple[bool, str]:
     try:
         key = _canonical_pattern_name(name)
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         key = (name or "").strip().lower()
     marker = f"# --- mcp-architecton snippet: {key} ---"
     if marker in text:
         return False, text
     try:
         snippet = get_snippet(name)
-    except Exception:
+    except (KeyError, AttributeError, TypeError):
         snippet = None
     if not snippet:
         return False, text
@@ -65,7 +65,7 @@ def _diff(a: str, b: str, fname: str) -> str:
                 a.splitlines(True), b.splitlines(True), fromfile=fname, tofile=fname
             )
         )
-    except Exception:
+    except (ImportError, ModuleNotFoundError):
         return ""
 
 

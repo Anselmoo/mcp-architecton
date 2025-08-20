@@ -25,7 +25,7 @@ try:  # pragma: no cover - optional dependency
     from mcp_architecton.snippets import get_snippet  # type: ignore
 
     NAME_ALIASES.update(_IMPL_ALIASES)
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
 
     def get_snippet(_name: str) -> str | None:  # type: ignore
         return None
@@ -414,7 +414,7 @@ def introduce_pattern_impl(
     # Lazy import to keep server resilient without implementors
     try:  # pragma: no cover - best-effort
         from mcp_architecton.snippets.api import transform_code as _transform_code  # type: ignore
-    except Exception:  # pragma: no cover
+    except (ImportError, ModuleNotFoundError):  # pragma: no cover
         _transform_code = None  # type: ignore
 
     def _apply_to_text(text: str) -> tuple[bool, str]:
@@ -475,7 +475,7 @@ def introduce_pattern_impl(
                     a.splitlines(True), b.splitlines(True), fromfile=fname, tofile=fname
                 )
             )
-        except Exception:
+        except (ImportError, ModuleNotFoundError):
             return ""
 
     if base.is_dir():
@@ -633,7 +633,7 @@ def scan_anti_patterns_impl(
             if hi_cc:
                 ind.append({"type": "high_cc", "count": len(hi_cc)})
                 recs.append("Strategy or Template Method to split complex logic")
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
             pass
 
         # Maintainability index (single score)
@@ -643,9 +643,9 @@ def scan_anti_patterns_impl(
                 if float(mi_val) < 50.0:
                     ind.append({"type": "low_mi", "mi": mi_val})
                     recs.append("Refactor to smaller functions; apply Strategy/Facade")
-            except Exception:
+            except (ValueError, TypeError):
                 pass
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
             pass
 
         # Raw metrics
@@ -656,7 +656,7 @@ def scan_anti_patterns_impl(
             if isinstance(loc, int) and loc > 1000:
                 ind.append({"type": "large_file", "loc": loc})
                 recs.append("Split module by responsibility; consider Layered/MVC separation")
-        except Exception:
+        except (SyntaxError, ValueError, AttributeError):
             pass
 
         # Heuristic anti-signals

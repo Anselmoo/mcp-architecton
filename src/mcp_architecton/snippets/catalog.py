@@ -42,7 +42,7 @@ def load_catalog() -> Catalog:
                 }
             )
         return {"patterns": entries}
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError):
         return {"patterns": []}
 
 

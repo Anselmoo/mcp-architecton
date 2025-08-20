@@ -56,7 +56,7 @@ def _run_generators(key: str, name: str) -> str | None:
             code = gen(name, entry)
             if code:
                 return code.strip()
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             # best-effort; ignore generator failures
             continue
     return None
@@ -76,7 +76,7 @@ def transform_code(name: str, source: str) -> str | None:
     for fn in fns:
         try:
             out = fn(source)
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             # best-effort; ignore transform failures
             continue
         if isinstance(out, str) and out != source:
@@ -166,7 +166,7 @@ try:  # pragma: no cover - optional
     for k, fns in _bt.items():
         for fn in fns:
             register_transformer(fn, [k])
-except Exception:
+except (ImportError, ModuleNotFoundError, AttributeError):
     pass
 
 

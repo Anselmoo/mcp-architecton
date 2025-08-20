@@ -87,7 +87,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                     try:
                         if Path(f).is_file():
                             targets.append(f)
-                    except Exception:
+                    except (OSError, TypeError):
                         pass
             if targets:
                 proc = subprocess.run(
@@ -110,7 +110,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                                 if fpath and code_key:
                                     counts_for_file = agg.setdefault(fpath, {})
                                     counts_for_file[code_key] = counts_for_file.get(code_key, 0) + 1
-                            except Exception:
+                            except (KeyError, TypeError, AttributeError):
                                 continue
                         ruff_out = {
                             "results": [
@@ -125,7 +125,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
             if tmp_dir:
                 try:
                     shutil.rmtree(tmp_dir)
-                except Exception:
+                except (OSError, FileNotFoundError):
                     pass
 
     return {"results": results, "ruff": ruff_out}

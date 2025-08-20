@@ -15,7 +15,7 @@ def list_patterns_impl() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(catalog_path.read_text())
-    except Exception:  # noqa: BLE001
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):  # noqa: BLE001
         return []
     patterns: list[dict[str, Any]] = data.get("patterns", [])
     return [p for p in patterns if p.get("category") != "Architecture"]

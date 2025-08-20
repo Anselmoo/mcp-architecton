@@ -41,7 +41,7 @@ def _tokenize_lower(text: str) -> str:
             try:
                 if node.type in {"identifier", "string", "comment"}:  # type: ignore[attr-defined]
                     tokens.append(src[node.start_byte : node.end_byte].lower())  # type: ignore[attr-defined]
-            except Exception:
+            except (AttributeError, TypeError):
                 pass
             if cur.goto_first_child():  # type: ignore[attr-defined]
                 _walk(cur)
@@ -51,7 +51,7 @@ def _tokenize_lower(text: str) -> str:
 
         _walk(cursor)
         return " ".join(tokens) if tokens else text.lower()
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         return text.lower()
 
 

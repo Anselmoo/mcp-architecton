@@ -61,14 +61,14 @@ def _ensure_future_annotations(source: str) -> str | None:
                 try:
                     first = rb[0]  # type: ignore[index]
                     has_docstring = getattr(first, "type", "") == "string"
-                except Exception:
+                except (IndexError, AttributeError, TypeError):
                     has_docstring = False
                 if has_docstring:
                     rb.insert(1, "from __future__ import annotations\n")  # type: ignore[call-arg]
                 else:
                     rb.insert(0, "from __future__ import annotations\n")  # type: ignore[call-arg]
                 return str(rb)
-            except Exception:
+            except (ImportError, ModuleNotFoundError, AttributeError):
                 # best-effort textual insert at file start
                 return "from __future__ import annotations\n" + source
         # best-effort textual insert at file start
@@ -76,7 +76,7 @@ def _ensure_future_annotations(source: str) -> str | None:
 
     try:
         mod = parse_module(source)
-    except Exception:
+    except (cst.ParserError, SyntaxError, ValueError):
         return None
 
     future_import = cst.SimpleStatementLine(

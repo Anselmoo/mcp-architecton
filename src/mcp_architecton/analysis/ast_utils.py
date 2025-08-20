@@ -17,7 +17,7 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
     # Warm astroid to ensure consistent behavior (ignore errors)
     try:  # pragma: no cover - optional
         astroid.parse(source)  # type: ignore[attr-defined]
-    except Exception:
+    except (SyntaxError, ValueError, AttributeError):
         pass
 
     findings: list[dict[str, Any]] = []
@@ -47,7 +47,7 @@ def astroid_summary(source: str) -> dict[str, Any]:
         mod: Any = astroid.parse(source)  # type: ignore[attr-defined]
         try:
             body: list[Any] = list(mod.body)  # type: ignore[attr-defined]
-        except Exception:
+        except (AttributeError, TypeError):
             body = []
         names = sorted([str(getattr(n, "name", "")) for n in body if hasattr(n, "name")])
         funcs = [

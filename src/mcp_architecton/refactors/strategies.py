@@ -26,42 +26,42 @@ from typing import Callable, Dict, Optional
 try:  # LibCST is required in project deps
     import libcst as cst
     from libcst import parse_module
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     cst = None  # type: ignore
     parse_module = None  # type: ignore
 
 try:  # Optional helpers (not strictly required at runtime)
     import parso  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     parso = None  # type: ignore
 
 try:
     import astroid  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     astroid = None  # type: ignore
 
 try:
     from redbaron import RedBaron  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     RedBaron = None  # type: ignore
 
 try:
     from tree_sitter import Language, Parser  # type: ignore
     from tree_sitter_languages import get_language  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     Language = None  # type: ignore
     Parser = None  # type: ignore
     get_language = None  # type: ignore
 
 try:
     from ast_grep_py import AstGrep  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     AstGrep = None  # type: ignore
 
 try:
     # Generic transforms from snippets
     from mcp_architecton.snippets.transforms import transform_generic
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
 
     def transform_generic(source: str) -> Optional[str]:  # type: ignore
         return None
@@ -69,7 +69,7 @@ except Exception:  # pragma: no cover
 
 try:  # alias normalization
     from mcp_architecton.snippets.aliases import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     _aliases: Dict[str, str] = {}
 else:
     _aliases = dict(_IMPL_ALIASES)
@@ -115,7 +115,7 @@ def _safe_libcst_insert_class(source: str, class_code: str) -> Optional[str]:
         new_body = list(mod.body) + [cst.parse_statement(class_code)]
         new_mod = mod.with_changes(body=new_body)
         return new_mod.code
-    except Exception:
+    except (cst.ParserError, SyntaxError, ValueError):
         return None
 
 
@@ -142,7 +142,7 @@ def _safe_libcst_insert_function(source: str, func_code: str) -> Optional[str]:
         new_body = list(mod.body) + [cst.parse_statement(func_code)]
         new_mod = mod.with_changes(body=new_body)
         return new_mod.code
-    except Exception:
+    except (cst.ParserError, SyntaxError, ValueError):
         return None
 
 
@@ -245,14 +245,14 @@ def transform_code(name: str, source: str) -> Optional[str]:
             out = fn(source)
             if isinstance(out, str) and out != source:
                 return out
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             pass
     # Generic transforms as fallback
     try:
         gout = transform_generic(source)
         if isinstance(gout, str) and gout != source:
             return gout
-    except Exception:
+    except (TypeError, ValueError, AttributeError):
         pass
     return None
 

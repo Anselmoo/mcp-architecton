@@ -29,7 +29,7 @@ try:  # pragma: no cover - optional dependency
     from mcp_architecton.snippets import get_snippet  # type: ignore
 
     NAME_ALIASES.update(_IMPL_ALIASES)
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
 
     def get_snippet(_name: str) -> str | None:  # type: ignore
         return None

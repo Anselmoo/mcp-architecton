@@ -39,7 +39,7 @@ def add_type_hints_to_code(source: str) -> tuple[bool, str]:
     """
     try:
         mod = parse_module(source)
-    except Exception:
+    except (cst.ParserError, SyntaxError, ValueError):
         return (False, source)
 
     transformer = _AddTypeHints()
