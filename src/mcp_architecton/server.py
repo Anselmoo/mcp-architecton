@@ -410,7 +410,8 @@ def propose_architecture_impl(
                 for code_key, cnt in counts_dict.items():
                     try:
                         ruff_summary[str(code_key)] = ruff_summary.get(str(code_key), 0) + int(cnt)
-                    except Exception:
+                    except (ValueError, TypeError):
+                        # Skip non-numeric counts
                         pass
 
     # Anti-pattern indicators snapshot (first source if present)

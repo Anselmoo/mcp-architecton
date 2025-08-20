@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ..catalog import CatalogEntry
+from ..snippets.catalog import CatalogEntry
 
 Generator = Callable[[str, Optional[CatalogEntry]], str | None]
 
