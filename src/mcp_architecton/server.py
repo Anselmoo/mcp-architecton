@@ -219,37 +219,195 @@ def introduce_architecture_impl(
 
 def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
     """Suggest refactors toward canonical implementations for detected patterns."""
+    # Get existing pattern findings
     findings = svc_analyze_patterns_impl(code=code).get("findings", [])
     suggestions: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for f in findings:
-        raw_name = str(f.get("name", ""))
-        canon = _canonical_pattern_name(raw_name)
-        if not canon:
-            continue
-        if canon in seen:
-            continue
-        seen.add(canon)
-        advice = _pattern_advice().get(canon, None)
-        if advice:
-            suggestions.append({"pattern": canon, "advice": advice})
+    
+    # Enhanced: Use intelligent refactoring analysis
+    try:
+        from mcp_architecton.analysis.refactoring_engine import intelligent_refactor
+        from mcp_architecton.analysis.code_analyzer import analyze_code_structure
+        
+        # Analyze code structure for better suggestions
+        structure = analyze_code_structure(code)
+        
+        for f in findings:
+            raw_name = str(f.get("name", ""))
+            canon = _canonical_pattern_name(raw_name)
+            if not canon or canon in seen:
+                continue
+            seen.add(canon)
+            
+            # Get traditional advice
+            advice = _pattern_advice().get(canon, None)
+            
+            # Get intelligent refactoring analysis
+            refactor_analysis = intelligent_refactor(code, canon)
+            
+            suggestion = {"pattern": canon}
+            if advice:
+                suggestion["advice"] = advice
+            
+            # Add enhanced refactoring information
+            if refactor_analysis.get("transformation_result", {}).get("success"):
+                suggestion["refactoring_analysis"] = {
+                    "existing_structure": refactor_analysis["analysis"]["existing_structure"],
+                    "transformation_plan": refactor_analysis["refactoring_plan"],
+                    "step_by_step_instructions": refactor_analysis["step_by_step_instructions"],
+                    "integration_points": refactor_analysis["integration_points"],
+                    "risks": refactor_analysis["risks"],
+                    "has_intelligent_transform": True
+                }
+                
+                # Include transformed code if available
+                transformed_code = refactor_analysis["transformation_result"].get("transformed_code")
+                if transformed_code and transformed_code != code:
+                    suggestion["refactoring_analysis"]["transformed_code"] = transformed_code
+                    suggestion["refactoring_analysis"]["changes_made"] = refactor_analysis["transformation_result"].get("changes_made", [])
+            else:
+                suggestion["refactoring_analysis"] = {
+                    "has_intelligent_transform": False,
+                    "fallback_reason": refactor_analysis.get("transformation_result", {}).get("reason", "No intelligent transform available")
+                }
+            
+            suggestions.append(suggestion)
+        
+        # Add suggestions for undetected but applicable patterns
+        for opportunity in structure.refactoring_opportunities:
+            pattern_type = opportunity.get("type", "")
+            if pattern_type and pattern_type not in seen:
+                canon_opp = _canonical_pattern_name(pattern_type)
+                if canon_opp and canon_opp not in seen:
+                    seen.add(canon_opp)
+                    refactor_analysis = intelligent_refactor(code, canon_opp)
+                    
+                    suggestion = {
+                        "pattern": canon_opp,
+                        "opportunity_detected": True,
+                        "opportunity_reason": opportunity.get("reason", ""),
+                        "confidence": opportunity.get("confidence", 0.5)
+                    }
+                    
+                    advice = _pattern_advice().get(canon_opp, None)
+                    if advice:
+                        suggestion["advice"] = advice
+                    
+                    if refactor_analysis.get("transformation_result", {}).get("success"):
+                        suggestion["refactoring_analysis"] = {
+                            "existing_structure": refactor_analysis["analysis"]["existing_structure"], 
+                            "transformation_plan": refactor_analysis["refactoring_plan"],
+                            "step_by_step_instructions": refactor_analysis["step_by_step_instructions"],
+                            "integration_points": refactor_analysis["integration_points"],
+                            "risks": refactor_analysis["risks"],
+                            "has_intelligent_transform": True
+                        }
+                    
+                    suggestions.append(suggestion)
+    
+    except ImportError:
+        # Fallback to traditional implementation if new modules not available
+        for f in findings:
+            raw_name = str(f.get("name", ""))
+            canon = _canonical_pattern_name(raw_name)
+            if not canon:
+                continue
+            if canon in seen:
+                continue
+            seen.add(canon)
+            advice = _pattern_advice().get(canon, None)
+            if advice:
+                suggestions.append({"pattern": canon, "advice": advice})
+    
     return {"suggestions": suggestions}
 
 
 def suggest_architecture_refactor_impl(code: str) -> dict[str, Any]:
     """Suggest refactors for detected architecture styles."""
+    # Get existing architecture findings
     findings = analyze_architectures_impl(code=code).get("findings", [])
     suggestions: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for f in findings:
-        raw_name = str(f.get("name", ""))
-        canon = _canonical_arch_name(raw_name)
-        if not canon or canon in seen:
-            continue
-        seen.add(canon)
-        advice = _arch_advice().get(canon, None)
-        if advice:
-            suggestions.append({"architecture": canon, "advice": advice})
+    
+    # Enhanced: Use intelligent refactoring analysis
+    try:
+        from mcp_architecton.analysis.code_analyzer import analyze_code_structure
+        
+        # Analyze code structure for better suggestions  
+        structure = analyze_code_structure(code)
+        
+        for f in findings:
+            raw_name = str(f.get("name", ""))
+            canon = _canonical_arch_name(raw_name)
+            if not canon or canon in seen:
+                continue
+            seen.add(canon)
+            
+            # Get traditional advice
+            advice = _arch_advice().get(canon, None)
+            
+            suggestion = {"architecture": canon}
+            if advice:
+                suggestion["advice"] = advice
+            
+            # Add enhanced analysis for architectural patterns
+            suggestion["refactoring_analysis"] = {
+                "existing_structure": {
+                    "classes": structure.classes,
+                    "functions": structure.functions,
+                    "complexity": structure.complexity_indicators
+                },
+                "architectural_opportunities": [
+                    opp for opp in structure.refactoring_opportunities 
+                    if opp.get("type") in ["class_decomposition", "layer_separation", "interface_extraction"]
+                ],
+                "integration_considerations": f"Consider how {canon} architecture integrates with existing {len(structure.classes)} classes and {len(structure.functions)} functions"
+            }
+            
+            suggestions.append(suggestion)
+        
+        # Add architectural opportunity suggestions
+        arch_opportunities = [
+            opp for opp in structure.refactoring_opportunities
+            if opp.get("type") in ["class_decomposition", "layer_separation"] 
+        ]
+        
+        for opportunity in arch_opportunities:
+            if "layered" not in [s.get("architecture", "").lower() for s in suggestions]:
+                suggestions.append({
+                    "architecture": "Layered Architecture",
+                    "opportunity_detected": True,
+                    "opportunity_reason": "Complex class structure detected - consider layered separation",
+                    "confidence": 0.6,
+                    "advice": "Consider organizing code into distinct layers (presentation, business, data) for better maintainability",
+                    "refactoring_analysis": {
+                        "existing_structure": {
+                            "classes": structure.classes,
+                            "complexity": structure.complexity_indicators
+                        },
+                        "suggested_layers": ["Presentation", "Business Logic", "Data Access"],
+                        "refactoring_steps": [
+                            "Identify current responsibilities in existing classes",
+                            "Extract business logic into service layer",
+                            "Separate data access concerns",
+                            "Create clear interfaces between layers"
+                        ]
+                    }
+                })
+                break
+    
+    except ImportError:
+        # Fallback to traditional implementation
+        for f in findings:
+            raw_name = str(f.get("name", ""))
+            canon = _canonical_arch_name(raw_name)
+            if not canon or canon in seen:
+                continue
+            seen.add(canon)
+            advice = _arch_advice().get(canon, None)
+            if advice:
+                suggestions.append({"architecture": canon, "advice": advice})
+    
     return {"suggestions": suggestions}
 
 

@@ -57,35 +57,50 @@ Alternatively, add `.vscode/mcp.json`:
 - thresholded-enforcement: anti-pattern indicators + ranked suggestions with reasons
 - analyze-patterns: detect patterns in code
 - analyze-architectures: detect architecture signals
-- suggest-refactor: propose changes towards canonical implementations (patterns)
-- suggest-architecture-refactor: targeted advice per architecture
-- introduce-pattern: transform-first; falls back to scaffold; returns unified diff. Supports {dry_run, out_path}
+- suggest-refactor: **ENHANCED** - now provides intelligent refactoring suggestions with context-aware analysis, step-by-step instructions, and code transformation
+- suggest-architecture-refactor: **ENHANCED** - targeted architectural advice with existing code structure analysis
+- introduce-pattern: **ENHANCED** - intelligent transformation-first approach; analyzes existing code and transforms appropriately rather than blind appending; returns unified diff. Supports {dry_run, out_path}
 - analyze-paths: scan files/dirs/globs for findings; optional metrics per file
+
+### Enhanced Intelligent Refactoring Features
+
+The suggest-refactor and introduce-pattern commands now include:
+- **Context-aware analysis**: Understands existing code structure before suggesting patterns
+- **Intelligent transformation**: Modifies existing code rather than appending templates
+- **Step-by-step instructions**: Detailed refactoring guidance for LLMs/Copilot
+- **Risk assessment**: Identifies potential issues with proposed refactoring
+- **Integration points**: Shows where patterns should connect with existing code
+- **Before/after comparisons**: Clear diff-based suggestions
+- **Validation framework**: Steps to verify refactored code works correctly
 
 ### Examples
 
 ```shell
-# Unified proposal for a file or code snippet
+# Unified proposal for a file or code snippet with intelligent analysis
 uv run mcp-architecton  # then call tool propose_architecture with {"files": ["path/to/file.py"]}
+
+# Intelligent pattern refactoring with step-by-step instructions
+uv run mcp-architecton  # then call tool suggest_refactor with {"code": "class MyClass: ..."}
 
 # Metrics + Ruff counts
 uv run mcp-architecton  # then call tool analyze_metrics with {"files": ["src/**/*.py"]}
 
-# Pattern-only proposal
+# Pattern-only proposal with refactoring opportunities
 uv run mcp-architecton  # then call tool propose_patterns with {"files": ["module.py"]}
 
-# Introduce a Strategy into a file without writing (dry-run)
+# Intelligent pattern introduction - analyzes and transforms existing code
 uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "dry_run": true}
 
-# Refactor-as-new: write the change to a different path and get the diff
-uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "out_path": "demo/refactored_demo_file_large.py"}
+# Refactor-as-new: write intelligent transformation to different path with diff
+uv run mcp-architecton  # then call tool introduce_pattern with {"name": "singleton", "module_path": "demo/demo_file_large.py", "out_path": "demo/refactored_demo_file_large.py"}
 ```
 
 ### Notes
 
-- Ruff-only: Dead-code scanning via Vulture has been removed for speed; we keep Ruff integrated in metrics.
-- Introduce tools apply generic AST-family transforms both before and after scaffolding to normalize imports and future annotations and always return a unified diff.
-- Overlap clarification: propose-architecture gives prioritized, ranked suggestions using indicators and advice; suggest-architecture-refactor is a lighter, direct advice emitter for already detected architectures.
+- **Intelligent Refactoring**: The introduce and suggest-refactor tools now analyze existing code structure and provide context-aware transformations rather than simple template appending. This addresses the issue of LLMs blindly appending boilerplate code.
+- **Ruff-only**: Dead-code scanning via Vulture has been removed for speed; we keep Ruff integrated in metrics.
+- **Transform-first approach**: Introduce tools apply intelligent AST-based analysis and transformations, with step-by-step instructions for LLMs, before falling back to scaffolding. Always returns unified diff.
+- **Enhanced suggestions**: suggest-refactor commands now provide detailed refactoring plans, risk assessments, and integration guidance for better LLM interaction.
 
 ## License
 

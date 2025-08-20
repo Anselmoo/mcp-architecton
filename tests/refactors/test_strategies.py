@@ -202,16 +202,16 @@ class TestTransformCode(unittest.TestCase):
         self.assertIsInstance(result, (str, type(None)))
 
     def test_transform_code_no_change(self):
-        """Test behavior when no transformation is needed."""
+        """Test behavior when strategy returns same content but generic transforms might apply."""
         def no_change_strategy(source: str) -> str | None:
             return source  # Return same content
         
         register_strategy("no_change", no_change_strategy)
         
-        original = "def test(): pass"
+        original = "from __future__ import annotations\ndef test(): pass"
         result = transform_code("no_change", original)
         
-        # Should return None since content is unchanged
+        # Should return None since content is unchanged after all transforms
         self.assertIsNone(result)
 
     def test_transform_code_with_generic_fallback(self):

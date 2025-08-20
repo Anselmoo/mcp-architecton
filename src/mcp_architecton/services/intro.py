@@ -15,7 +15,24 @@ def _canonical_pattern_name(name: str | None) -> str:
 
 
 def _apply_to_text(name: str, text: str) -> Tuple[bool, str]:
-    # Try strategy transform first
+    # Enhanced: Try intelligent refactoring first
+    try:
+        from mcp_architecton.analysis.refactoring_engine import intelligent_refactor
+        
+        # Attempt intelligent refactoring
+        refactor_result = intelligent_refactor(text, name)
+        transformation_result = refactor_result.get("transformation_result", {})
+        
+        if (transformation_result.get("success") and 
+            transformation_result.get("transformed_code") and
+            transformation_result["transformed_code"] != text):
+            return True, transformation_result["transformed_code"]
+    
+    except ImportError:
+        # Fall back to existing logic if intelligent refactoring not available
+        pass
+    
+    # Try strategy transform first (existing logic)
     if _strategy_transform is not None:
         try:
             out = _strategy_transform(name, text)
