@@ -1,26 +1,22 @@
 from __future__ import annotations
-# ruff: noqa: I001
 
+import json
 import logging
-from pathlib import Path
+import shutil
+import subprocess
 import sys
+import tempfile
+from pathlib import Path
 from typing import Any, cast
 
+# Per user requirement: import directly from fastmcp
 from fastmcp import FastMCP  # type: ignore[import-not-found]
 
 from mcp_architecton.analysis.advice_loader import build_advice_maps
+from mcp_architecton.analysis.ast_utils import analyze_code_for_patterns
 from mcp_architecton.analysis.enforcement import ranked_enforcement_targets
 from mcp_architecton.analysis.typehint_transformer import add_type_hints_to_code
-from mcp_architecton.services.architectures import (
-    analyze_architectures_impl as svc_analyze_architectures_impl,
-    list_architectures_impl as svc_list_architectures_impl,
-)
-from mcp_architecton.services.metrics import analyze_metrics_impl as svc_analyze_metrics_impl
-from mcp_architecton.services.patterns import (
-    analyze_patterns_impl as svc_analyze_patterns_impl,
-    list_patterns_impl as svc_list_patterns_impl,
-)
-from mcp_architecton.services.scan import scan_anti_patterns_impl as svc_scan_anti_patterns_impl
+from mcp_architecton.detectors import registry as detector_registry
 
 # Implementor snippets are optional; keep the server resilient if not present.
 NAME_ALIASES: dict[str, str] = {}
@@ -158,27 +154,242 @@ def _canonical_arch_name(name: str | None) -> str:
 
 
 def list_patterns_impl() -> list[dict[str, Any]]:
-    return svc_list_patterns_impl()
+    """List pattern entries from the catalog (non-architectures)."""
+    catalog_path = Path(__file__).resolve().parents[2] / "data" / "patterns" / "catalog.json"
+    if not catalog_path.exists():
+        return []
+    try:
+        data = json.loads(catalog_path.read_text())
+    except Exception:  # noqa: BLE001
+        return []
+    patterns: list[dict[str, Any]] = data.get("patterns", [])
+    return [p for p in patterns if p.get("category") != "Architecture"]
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
-    return svc_analyze_patterns_impl(code=code, files=files)
+    """Analyze code or files and return design pattern findings.
+
+    Uses AST-based detectors via analyze_code_for_patterns.
+    """
+    if not code and not files:
+        return {"error": "Provide 'code' or 'files'"}
+
+    texts: list[tuple[str, str]] = []
+    if code:
+        texts.append(("<input>", code))
+    if files:
+        for f in files:
+            p = Path(f)
+            try:
+                texts.append((str(p), p.read_text()))
+            except Exception as exc:  # noqa: BLE001
+                texts.append((str(p), f"<read-error: {exc}>"))
+
+    findings: list[dict[str, Any]] = []
+    for label, text in texts:
+        try:
+            results = analyze_code_for_patterns(text, detector_registry)
+        except Exception as exc:  # noqa: BLE001
+            findings.append({"source": label, "error": str(exc)})
+            continue
+        for r in results:
+            r["source"] = label
+            findings.append(r)
+
+    return {"findings": findings}
 
 
 def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None) -> dict[str, Any]:
-    return svc_analyze_metrics_impl(code=code, files=files)
+    """Compute code metrics (CC/MI/LOC) using radon and include Ruff results.
+
+    Accepts either a code string or a list of file paths.
+    Returns a dict with per-source metrics and linter analyses.
+    """
+    try:
+        from radon.complexity import cc_visit  # type: ignore
+        from radon.metrics import mi_visit  # type: ignore
+        from radon.raw import analyze as raw_analyze  # type: ignore
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"radon not available: {exc}"}
+
+    if not code and not files:
+        return {"error": "Provide 'code' or 'files'"}
+
+    texts: list[tuple[str, str]] = []
+    if code:
+        texts.append(("<input>", code))
+    if files:
+        for f in files:
+            p = Path(f)
+            try:
+                texts.append((str(p), p.read_text()))
+            except Exception as exc:  # noqa: BLE001
+                texts.append((str(p), f"<read-error: {exc}>"))
+
+    results: list[dict[str, Any]] = []
+    for label, text in texts:
+        try:
+            cc_objs: list[Any] = list(cc_visit(text))  # type: ignore[misc]
+            cc: list[dict[str, Any]] = []
+            for obj in cc_objs:
+                cc.append(
+                    {
+                        "name": getattr(obj, "name", ""),
+                        "type": getattr(obj, "kind", ""),
+                        "complexity": getattr(obj, "complexity", None),
+                        "lineno": getattr(obj, "lineno", None),
+                    }
+                )
+
+            mi: Any = mi_visit(text, multi=True)  # type: ignore[misc]
+            raw_val = raw_analyze(text)  # type: ignore[misc]
+            raw = cast(Any, raw_val)
+            results.append(
+                {
+                    "source": label,
+                    "cyclomatic_complexity": cc,
+                    "maintainability_index": mi,
+                    "raw": {
+                        "loc": getattr(raw, "loc", None),
+                        "lloc": getattr(raw, "lloc", None),
+                        "sloc": getattr(raw, "sloc", None),
+                        "comments": getattr(raw, "comments", None),
+                        "multi": getattr(raw, "multi", None),
+                    },
+                }
+            )
+        except Exception as exc:  # noqa: BLE001
+            results.append({"source": label, "error": str(exc)})
+
+    # Ruff analysis (aggregated per file)
+    ruff_exe = shutil.which("ruff")
+    ruff_out: dict[str, Any] = {"error": "ruff CLI not available in PATH"}
+    if ruff_exe:
+        tmp_dir: str | None = None
+        targets: list[str] = []
+        try:
+            if code:
+                tmp_dir = tempfile.mkdtemp(prefix="ruff_")
+                p = Path(tmp_dir) / "input.py"
+                p.write_text(code)
+                targets.append(str(p))
+            if files:
+                for f in files:
+                    try:
+                        if Path(f).is_file():
+                            targets.append(f)
+                    except Exception:
+                        pass
+            if targets:
+                proc = subprocess.run(
+                    [ruff_exe, "check", "--format", "json", *targets],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode in (0, 1):  # 1 indicates lint findings
+                    try:
+                        data = json.loads(proc.stdout or "[]")
+                        # Aggregate by file path and rule code
+                        agg: dict[str, dict[str, int]] = {}
+                        items_list: list[dict[str, Any]] = (
+                            cast(list[dict[str, Any]], data) if isinstance(data, list) else []
+                        )
+                        for item in items_list:
+                            try:
+                                fpath = str(item.get("filename", ""))
+                                code_key = str(item.get("code", ""))
+                                if fpath and code_key:
+                                    counts_for_file = agg.setdefault(fpath, {})
+                                    counts_for_file[code_key] = counts_for_file.get(code_key, 0) + 1
+                            except Exception:
+                                continue
+                        ruff_out = {
+                            "results": [
+                                {"file": fp, "counts": counts} for fp, counts in sorted(agg.items())
+                            ]
+                        }
+                    except Exception as exc:  # noqa: BLE001
+                        ruff_out = {"error": f"ruff parse error: {exc}"}
+                else:
+                    ruff_out = {"error": proc.stderr.strip() or "ruff failed"}
+        finally:
+            if tmp_dir:
+                try:
+                    shutil.rmtree(tmp_dir)
+                except Exception:
+                    pass
+
+    return {"results": results, "ruff": ruff_out}
 
 
 def list_architectures_impl() -> list[dict[str, Any]]:
-    return svc_list_architectures_impl()
+    """List recognized software architectures from the catalog."""
+    catalog_path = Path(__file__).resolve().parents[2] / "data" / "patterns" / "catalog.json"
+    if not catalog_path.exists():
+        return []
+    try:
+        data = json.loads(catalog_path.read_text())
+    except Exception:  # noqa: BLE001
+        return []
+    patterns: list[dict[str, Any]] = data.get("patterns", [])
+    return [p for p in patterns if p.get("category") == "Architecture"]
 
 
 def analyze_architectures_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
-    return svc_analyze_architectures_impl(code=code, files=files)
+    """Detect architecture styles in a code string or Python files (provide code or files)."""
+    if not code and not files:
+        return {"error": "Provide 'code' or 'files'"}
+
+    # Build name set from catalog; fallback to heuristic names
+    arch_entries = list_architectures_impl()
+    arch_names: set[str] = {str(e.get("name", "")) for e in arch_entries if e.get("name")}
+    if not arch_names:
+        arch_names = {
+            "Layered Architecture",
+            "Hexagonal Architecture",
+            "Clean Architecture",
+            "3-Tier Architecture",
+            "Repository",
+            "Service Layer",
+            "Unit of Work",
+            "Message Bus",
+            "Domain Events",
+            "CQRS",
+            "Front Controller",
+            "Model-View-Controller (MVC)",
+        }
+
+    texts: list[tuple[str, str]] = []
+    if code:
+        texts.append(("<input>", code))
+    if files:
+        for f in files:
+            p = Path(f)
+            try:
+                texts.append((str(p), p.read_text()))
+            except Exception as exc:  # noqa: BLE001
+                texts.append((str(p), f"<read-error: {exc}>"))
+
+    findings: list[dict[str, Any]] = []
+    for label, text in texts:
+        try:
+            all_results = analyze_code_for_patterns(text, detector_registry)
+        except Exception as exc:  # noqa: BLE001
+            findings.append({"source": label, "error": str(exc)})
+            continue
+        for r in all_results:
+            name = str(r.get("name", ""))
+            if name in arch_names:
+                r["source"] = label
+                findings.append(r)
+
+    return {"findings": findings}
 
 
 def introduce_pattern_impl(
@@ -193,12 +404,139 @@ def introduce_pattern_impl(
     (recursively), optionally writing results to an out_path directory (mirrored structure).
     Aggregates diffs for all changed files.
     """
-    # Delegate to services.intro (keeps API stable, improves maintainability)
-    try:
-        from mcp_architecton.services.intro import introduce_impl  # type: ignore
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": f"intro service unavailable: {exc}"}
-    return introduce_impl(name=name, module_path=module_path, dry_run=dry_run, out_path=out_path)
+    base = Path(module_path)
+    if not base.exists():
+        return {"status": "error", "error": f"Path not found: {module_path}"}
+
+    # Lazy import to keep server resilient without implementors
+    try:  # pragma: no cover - best-effort
+        from mcp_architecton.snippets.api import transform_code as _transform_code  # type: ignore
+    except Exception:  # pragma: no cover
+        _transform_code = None  # type: ignore
+
+    def _apply_to_text(text: str) -> tuple[bool, str]:
+        if _transform_code is None:
+            return (False, text)
+        try:
+            out = _transform_code(name, text)  # type: ignore[misc]
+        except Exception:
+            out = None
+        if isinstance(out, str) and out != text:
+            return (True, out)
+        return (False, text)
+
+    def _append_snippet_if_missing(text: str) -> tuple[bool, str]:
+        """Append a scaffold snippet when no transform changed the file.
+
+        Uses a marker to remain idempotent and runs a cleanup transform after append.
+        """
+        try:
+            # Normalize key for marker readability
+            key = _canonical_pattern_name(name)
+        except Exception:
+            key = (name or "").strip().lower()
+
+        marker = f"# --- mcp-architecton snippet: {key} ---"
+        if marker in text:
+            return (False, text)
+
+        try:
+            snippet = get_snippet(name)
+        except Exception:
+            snippet = None
+        if not snippet:
+            return (False, text)
+
+        # Append with separation and end marker
+        appended = (
+            text.rstrip() + "\n\n" + marker + "\n" + snippet.rstrip() + "\n# --- end snippet ---\n"
+        )
+
+        # Best-effort cleanup using generic transforms (future imports, imports organization)
+        if _transform_code is not None:
+            try:
+                cleaned = _transform_code(name, appended)  # type: ignore[misc]
+                if isinstance(cleaned, str) and cleaned:
+                    appended = cleaned
+            except Exception:
+                pass
+
+        return (True, appended)
+
+    def _diff(a: str, b: str, fname: str) -> str:
+        try:
+            import difflib
+
+            return "".join(
+                difflib.unified_diff(
+                    a.splitlines(True), b.splitlines(True), fromfile=fname, tofile=fname
+                )
+            )
+        except Exception:
+            return ""
+
+    if base.is_dir():
+        changes: list[dict[str, Any]] = []
+        for p in sorted(base.rglob("*.py")):
+            try:
+                before = p.read_text()
+            except Exception as exc:  # noqa: BLE001
+                changes.append({"file": str(p), "error": str(exc)})
+                continue
+            changed, after = _apply_to_text(before)
+            # Fallback: append snippet scaffold if no transform changed the file
+            if not changed:
+                appended, after2 = _append_snippet_if_missing(after)
+                if appended:
+                    changed, after = True, after2
+            entry: dict[str, Any] = {"file": str(p), "changed": changed}
+            if changed:
+                entry["diff"] = _diff(before, after, str(p))
+            # Write only if not dry_run and change present
+            if changed and not dry_run:
+                if out_path:
+                    outp = Path(out_path) / p.relative_to(base)
+                    outp.parent.mkdir(parents=True, exist_ok=True)
+                    outp.write_text(after)
+                    entry["written_to"] = str(outp)
+                else:
+                    p.write_text(after)
+            changes.append(entry)
+        return {
+            "status": "ok",
+            "mode": "transformed-dir",
+            "dry_run": dry_run,
+            "target": str(base),
+            "changes": changes,
+        }
+    else:
+        try:
+            before = base.read_text()
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "error", "error": str(exc), "target": str(base)}
+        changed, after = _apply_to_text(before)
+        if not changed:
+            appended, after2 = _append_snippet_if_missing(after)
+            if appended:
+                changed, after = True, after2
+        res: dict[str, Any] = {
+            "status": "ok",
+            "mode": "transformed-file",
+            "dry_run": dry_run,
+            "target": str(base),
+            "changed": changed,
+        }
+        if changed:
+            res["diff"] = _diff(before, after, str(base))
+            if not dry_run:
+                if out_path:
+                    outp = Path(out_path)
+                    outp.parent.mkdir(parents=True, exist_ok=True)
+                    outp.write_text(after)
+                    res["written_to"] = str(outp)
+                else:
+                    base.write_text(after)
+        return res
 
 
 def introduce_architecture_impl(
@@ -219,7 +557,7 @@ def introduce_architecture_impl(
 
 def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
     """Suggest refactors toward canonical implementations for detected patterns."""
-    findings = svc_analyze_patterns_impl(code=code).get("findings", [])
+    findings = analyze_code_for_patterns(code, detector_registry)
     suggestions: list[dict[str, Any]] = []
     seen: set[str] = set()
     for f in findings:
@@ -254,9 +592,137 @@ def suggest_architecture_refactor_impl(code: str) -> dict[str, Any]:
 
 
 def scan_anti_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
-    return svc_scan_anti_patterns_impl(code=code, files=files)
+    """Scan for anti-pattern indicators and map to pattern/architecture recommendations.
+
+    Returns per-source: metrics (CC/MI/LOC), indicators, and suggested patterns/architectures.
+    """
+    try:
+        from radon.complexity import cc_visit  # type: ignore
+        from radon.metrics import mi_visit  # type: ignore
+        from radon.raw import analyze as raw_analyze  # type: ignore
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"radon not available: {exc}"}
+
+    if not code and not files:
+        return {"error": "Provide 'code' or 'files'"}
+
+    texts: list[tuple[str, str]] = []
+    if code:
+        texts.append(("<input>", code))
+    if files:
+        for f in files:
+            p = Path(f)
+            try:
+                texts.append((str(p), p.read_text()))
+            except Exception as exc:  # noqa: BLE001
+                texts.append((str(p), f"<read-error: {exc}>"))
+
+    def _indicators_for_text(text: str) -> tuple[list[dict[str, Any]], list[str]]:
+        ind: list[dict[str, Any]] = []
+        recs: list[str] = []
+        # Cyclomatic complexity
+        try:
+            cc_objs: list[Any] = list(cc_visit(text))  # type: ignore[misc]
+            hi_cc = [o for o in cc_objs if getattr(o, "complexity", 0) >= 10]
+            if hi_cc:
+                ind.append({"type": "high_cc", "count": len(hi_cc)})
+                recs.append("Strategy or Template Method to split complex logic")
+        except Exception:
+            pass
+
+        # Maintainability index (single score)
+        try:
+            mi_val = mi_visit(text, multi=False)  # type: ignore[misc]
+            try:
+                if float(mi_val) < 50.0:
+                    ind.append({"type": "low_mi", "mi": mi_val})
+                    recs.append("Refactor to smaller functions; apply Strategy/Facade")
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+        # Raw metrics
+        try:
+            raw_val = raw_analyze(text)  # type: ignore[misc]
+            raw_any = cast(Any, raw_val)
+            loc = getattr(raw_any, "loc", 0)
+            if isinstance(loc, int) and loc > 1000:
+                ind.append({"type": "large_file", "loc": loc})
+                recs.append("Split module by responsibility; consider Layered/MVC separation")
+        except Exception:
+            pass
+
+        # Heuristic anti-signals
+        if "global " in text or "from typing import Any" in text:
+            ind.append({"type": "global_or_any_usage"})
+            recs.append("Introduce DI/Facade; reduce global state and Any")
+        if "eval(" in text or "exec(" in text:
+            ind.append({"type": "dynamic_eval"})
+            recs.append("Avoid eval/exec; use Strategy/Factory")
+        if "print(" in text and ("logging" not in text):
+            ind.append({"type": "print_logging"})
+            recs.append("Use logging; keep IO at edges (Hexagonal)")
+
+        # Very large functions (simple heuristic)
+        for block in text.split("\n\n"):
+            lines = block.splitlines()
+            if len(lines) > 80 and any(line.strip().startswith("def ") for line in lines[:3]):
+                ind.append({"type": "very_large_function", "lines": len(lines)})
+                recs.append("Extract methods (Template Method) or strategies")
+                break
+
+        # Map duplicate recommendations once
+        uniq_recs: list[str] = []
+        seen_local: set[str] = set()
+        for r in recs:
+            if r not in seen_local:
+                seen_local.add(r)
+                uniq_recs.append(r)
+        return ind, uniq_recs
+
+    results: list[dict[str, Any]] = []
+    for label, text in texts:
+        try:
+            cc_objs: list[Any] = list(cc_visit(text))  # type: ignore[misc]
+            cc: list[dict[str, Any]] = []
+            for obj in cc_objs:
+                cc.append(
+                    {
+                        "name": getattr(obj, "name", ""),
+                        "type": getattr(obj, "kind", ""),
+                        "complexity": getattr(obj, "complexity", None),
+                        "lineno": getattr(obj, "lineno", None),
+                    }
+                )
+            mi: Any = mi_visit(text, multi=True)  # type: ignore[misc]
+            raw_val = raw_analyze(text)  # type: ignore[misc]
+            indicators, recommendations = _indicators_for_text(text)
+            results.append(
+                {
+                    "source": label,
+                    "metrics": {
+                        "cyclomatic_complexity": cc,
+                        "maintainability_index": mi,
+                        "raw": {
+                            "loc": getattr(cast(Any, raw_val), "loc", None),
+                            "lloc": getattr(cast(Any, raw_val), "lloc", None),
+                            "sloc": getattr(cast(Any, raw_val), "sloc", None),
+                            "comments": getattr(cast(Any, raw_val), "comments", None),
+                            "multi": getattr(cast(Any, raw_val), "multi", None),
+                        },
+                    },
+                    "indicators": indicators,
+                    "recommendations": recommendations,
+                }
+            )
+        except Exception as exc:  # noqa: BLE001
+            results.append({"source": label, "error": str(exc)})
+
+    return {"results": results}
 
 
 def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[str, Any]:
@@ -309,9 +775,8 @@ def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[
         except Exception as exc:  # noqa: BLE001
             findings.append({"source": str(f), "error": f"<read-error: {exc}>"})
             continue
-        res = svc_analyze_patterns_impl(code=text)
-        for r in cast(list[dict[str, Any]], res.get("findings", [])):
-            r["source"] = r.get("source") or str(f)
+        for r in analyze_code_for_patterns(text, detector_registry):
+            r["source"] = str(f)
             findings.append(r)
 
         if include_metrics:
@@ -743,3 +1208,26 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# --- mcp-architecton snippet: facade ---
+class _SubsystemA:
+    def op_a(self) -> str:
+        return "A"
+
+
+class _SubsystemB:
+    def op_b(self) -> str:
+        return "B"
+
+
+class Facade:
+    """Simplified interface orchestrating multiple subsystems."""
+
+    def __init__(self) -> None:
+        self._a = _SubsystemA()
+        self._b = _SubsystemB()
+
+    def do(self) -> str:
+        # Minimal orchestration example
+        return f"{self._a.op_a()}-{self._b.op_b()}"
+# --- end snippet ---

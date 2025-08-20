@@ -8,9 +8,51 @@ from __future__ import annotations
 
 from typing import Any
 
+# Richer tokenization using tree-sitter (declared in pyproject)
+from tree_sitter import Parser  # type: ignore
+from tree_sitter_languages import get_language  # type: ignore
+
 
 def _simplify(s: str) -> str:
     return "".join(ch for ch in s.lower() if ch.isalnum())
+
+
+def _tokenize_lower(text: str) -> str:
+    """Best-effort lowercase text normalization with optional tree-sitter tokenization.
+
+    Falls back to plain lowercasing; returns a space-separated token string.
+    """
+    try:  # pragma: no cover - optional
+        lang = get_language("python")  # type: ignore[no-untyped-call]
+        parser = Parser()  # type: ignore[call-arg]
+        parser.set_language(lang)  # type: ignore[attr-defined]
+        tree = parser.parse(bytes(text, "utf8"))  # type: ignore[call-arg]
+        # Simple walk to collect identifiers
+        cursor = tree.walk()  # type: ignore[call-arg]
+        src = text
+        tokens: list[str] = []
+        visited: set[int] = set()
+
+        def _walk(cur) -> None:  # type: ignore[no-redef]
+            node = cur.node  # type: ignore[attr-defined]
+            if id(node) in visited:
+                return
+            visited.add(id(node))
+            try:
+                if node.type in {"identifier", "string", "comment"}:  # type: ignore[attr-defined]
+                    tokens.append(src[node.start_byte : node.end_byte].lower())  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            if cur.goto_first_child():  # type: ignore[attr-defined]
+                _walk(cur)
+                while cur.goto_next_sibling():  # type: ignore[attr-defined]
+                    _walk(cur)
+                cur.goto_parent()  # type: ignore[attr-defined]
+
+        _walk(cursor)
+        return " ".join(tokens) if tokens else text.lower()
+    except Exception:
+        return text.lower()
 
 
 def _canonical_from_text(
@@ -147,7 +189,7 @@ def ranked_enforcement_targets(
             add_target(target, [itype], max(1, bonus or base), acc)
 
     # Consider explicit recommendations text
-    rec_text = " ".join(r.lower() for r in recs)
+    rec_text = _tokenize_lower(" ".join(recs))
     if rec_text:
         for k in _canonical_from_text(rec_text, list(pattern_advice.keys()), name_aliases):
             add_target(k, ["recommendation"], 1, acc)

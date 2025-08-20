@@ -14,6 +14,11 @@ Design principles:
   pattern requires light reorganization.
 
 API: Export BUILTIN_TRANSFORMS mapping consumed by api.register_transformer.
+
+Optional tool integrations used when available (best-effort, graceful fallback):
+- libcst (primary, already used)
+- RedBaron (fallback when libcst fails/unavailable)
+- tree_sitter / ast-grep-py (detectors stubs for future heuristics; currently no-op)
 """
 
 from __future__ import annotations
@@ -24,10 +29,18 @@ import libcst as cst
 from libcst import parse_module
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
+from redbaron import RedBaron
+
+# Note: Additional tools like tree-sitter / ast-grep-py can be integrated here later.
 
 
 def _libcst_available() -> bool:
-    return bool(cst and parse_module)
+    # libcst is required by the project; keep helper for symmetry
+    return True
+
+
+def _redbaron_available() -> bool:
+    return True
 
 
 def _ensure_future_annotations(source: str) -> str | None:
@@ -39,6 +52,25 @@ def _ensure_future_annotations(source: str) -> str | None:
     if "from __future__ import annotations" in source:
         return None
     if not _libcst_available():
+        # Try RedBaron to insert after module docstring if present
+        if _redbaron_available():
+            try:
+                rb = RedBaron(source)  # type: ignore[operator]
+                # Find module docstring (first node is a string)
+                has_docstring = False
+                try:
+                    first = rb[0]  # type: ignore[index]
+                    has_docstring = getattr(first, "type", "") == "string"
+                except Exception:
+                    has_docstring = False
+                if has_docstring:
+                    rb.insert(1, "from __future__ import annotations\n")  # type: ignore[call-arg]
+                else:
+                    rb.insert(0, "from __future__ import annotations\n")  # type: ignore[call-arg]
+                return str(rb)
+            except Exception:
+                # best-effort textual insert at file start
+                return "from __future__ import annotations\n" + source
         # best-effort textual insert at file start
         return "from __future__ import annotations\n" + source
 
@@ -118,7 +150,43 @@ def _organize_imports(source: str) -> str | None:
     is unavailable, no-op.
     """
     if not _libcst_available():
-        return None
+        # RedBaron fallback: ensure abc imports when ABC/abstractmethod used
+        if not _redbaron_available():
+            return None
+        try:
+            rb = RedBaron(source)
+            code_str = str(rb)
+            needs_abc = (" ABC" in code_str or "(ABC" in code_str) and (
+                "from abc import ABC" not in code_str
+            )
+            needs_am = ("abstractmethod" in code_str) and (
+                "abstractmethod" not in code_str.split("import ")[-1]
+            )
+            if not (needs_abc or needs_am):
+                return None
+            # Build import line
+            symbols: list[str] = []
+            if needs_abc:
+                symbols.append("ABC")
+            if needs_am:
+                symbols.append("abstractmethod")
+            import_line = f"from abc import {', '.join(symbols)}\n"
+            # Insert after future import or at top
+            inserted = False
+            for i, node in enumerate(rb):
+                try:
+                    text = str(node)
+                except Exception:
+                    continue
+                if text.strip().startswith("from __future__ import annotations"):
+                    rb.insert(i + 1, import_line)
+                    inserted = True
+                    break
+            if not inserted:
+                rb.insert(0, import_line)
+            return str(rb)
+        except Exception:
+            return None
 
     try:
         mod = parse_module(source)
@@ -192,40 +260,77 @@ def plan_refactor(source: str, goals: list[str] | None = None) -> RefactorPlan:
     notes: list[str] = []
     risks: list[str] = []
 
-    # Detect need for future annotations normalization
-    norm = _normalize_future_annotations(source)
-    ens = _ensure_future_annotations(source) if norm is None else _ensure_future_annotations(norm)
-    if norm is not None:
+    # Normalize and ensure future annotations where appropriate
+    # If the canonical future line appears more than once, plan to normalize
+    target = "from __future__ import annotations"
+    lines = source.splitlines()
+    if sum(1 for ln in lines if ln.strip() == target) > 1:
         steps.append({"kind": "normalize_future", "details": {}})
-    if ens is not None:
+        notes.append("De-duplicate 'from __future__ import annotations' and move to top.")
+    # If it's missing entirely, plan to ensure it
+    if not any(ln.strip() == target for ln in lines):
         steps.append({"kind": "ensure_future", "details": {}})
+        notes.append("Ensure future annotations import is present.")
 
-    # Detect potential abc import needs (heuristic)
-    if " ABC" in source or "(ABC" in source or "abstractmethod" in source:
+    # Very light heuristic for import organization: if 'ABC' / 'abstractmethod' used
+    # without obvious import in the file, add an import step.
+    code_str = source
+    needs_abc = (" ABC" in code_str or "(ABC" in code_str) and (
+        "from abc import ABC" not in code_str
+    )
+    needs_am = ("abstractmethod" in code_str) and (
+        "abstractmethod" not in code_str.split("import ")[-1]
+    )
+    if needs_abc or needs_am:
         steps.append(
             {
                 "kind": "add_imports",
-                "details": {"module": "abc", "names": ["ABC", "abstractmethod"]},
+                "details": {
+                    "symbols": [
+                        s for s, ok in [("ABC", needs_abc), ("abstractmethod", needs_am)] if ok
+                    ]
+                },
             }
         )
+        notes.append("Ensure abc imports for ABC/abstractmethod are present.")
+
+    # Respect simple goal hints if provided
+    if goals:
+        goal_set = {g.strip().lower() for g in goals}
+        if "organize_imports" in goal_set and not any(
+            s.get("kind") == "add_imports" for s in steps
+        ):
+            steps.append({"kind": "add_imports", "details": {}})
+        if "ensure_future_annotations" in goal_set and not any(
+            s.get("kind") in {"normalize_future", "ensure_future"} for s in steps
+        ):
+            steps.append({"kind": "ensure_future", "details": {}})
 
     return {"steps": steps, "notes": notes, "risks": risks}
 
 
 def apply_plan(source: str, plan: RefactorPlan) -> str | None:
     """Apply a plan's steps idempotently. Returns new source or None if no change."""
+    if not plan or not plan.get("steps"):
+        return None
+
+    # Map plan kinds to underlying functions
+    kind_map: dict[str, Callable[[str], str | None]] = {
+        "normalize_future": _normalize_future_annotations,
+        "ensure_future": _ensure_future_annotations,
+        "add_imports": _organize_imports,
+    }
+
     current = source
     changed = False
     for step in plan.get("steps", []):
-        kind = step.get("kind", "")
-        if kind == "normalize_future":
-            out = _normalize_future_annotations(current)
-        elif kind == "ensure_future":
-            out = _ensure_future_annotations(current)
-        elif kind == "add_imports":
-            out = _organize_imports(current)
-        else:
-            out = None
+        fn = kind_map.get(step.get("kind", ""))
+        if not fn:
+            continue
+        try:
+            out = fn(current)
+        except Exception:
+            continue
         if isinstance(out, str) and out != current:
             current = out
             changed = True

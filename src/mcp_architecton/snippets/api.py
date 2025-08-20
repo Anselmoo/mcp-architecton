@@ -70,13 +70,16 @@ def transform_code(name: str, source: str) -> str | None:
     """
     key_raw = (name or "").strip().lower()
     key = NAME_ALIASES.get(key_raw, key_raw)
+
+    # Try key-specific transformers first, then global ones
     fns = _TRANSFORMERS.get(key, []) + _TRANSFORMERS.get("*", [])
     for fn in fns:
         try:
             out = fn(source)
         except Exception:
+            # best-effort; ignore transform failures
             continue
-        if isinstance(out, str) and out.strip():
+        if isinstance(out, str) and out != source:
             return out
     return None
 
