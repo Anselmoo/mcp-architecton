@@ -53,7 +53,7 @@ def _load_module_for_detector(name: str, detector: Any):
     for mname in candidates:
         try:
             return importlib.import_module(mname)
-        except Exception:
+        except (ImportError, ModuleNotFoundError):
             continue
     return None
 

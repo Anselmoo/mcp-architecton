@@ -305,7 +305,8 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                                 if fpath and code_key:
                                     counts_for_file = agg.setdefault(fpath, {})
                                     counts_for_file[code_key] = counts_for_file.get(code_key, 0) + 1
-                            except Exception:
+                            except (TypeError, AttributeError):
+                                # Skip malformed ruff output items
                                 continue
                         ruff_out = {
                             "results": [
@@ -421,7 +422,8 @@ def introduce_pattern_impl(
             return (False, text)
         try:
             out = _transform_code(name, text)  # type: ignore[misc]
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
+            # Transform function failed
             out = None
         if isinstance(out, str) and out != text:
             return (True, out)
@@ -441,7 +443,8 @@ def introduce_pattern_impl(
 
         try:
             snippet = get_snippet(name)
-        except Exception:
+        except (KeyError, AttributeError, TypeError):
+            # Snippet retrieval failed
             snippet = None
         if not snippet:
             return (False, text)
@@ -457,7 +460,8 @@ def introduce_pattern_impl(
                 cleaned = _transform_code(name, appended)  # type: ignore[misc]
                 if isinstance(cleaned, str) and cleaned:
                     appended = cleaned
-            except Exception:
+            except (TypeError, ValueError, AttributeError):
+                # Cleanup transform failed, continue with non-cleaned version
                 pass
 
         return (True, appended)
