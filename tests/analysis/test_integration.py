@@ -58,10 +58,6 @@ class ConfigManager:
         result2 = suggest_pattern_refactor_impl(singleton_candidate_code)
         suggestions2 = result2["suggestions"]
         
-        # Check if any suggestions have enhanced refactoring analysis
-        enhanced_suggestions = [s for s in suggestions2 
-                              if s.get("refactoring_analysis", {}).get("has_intelligent_transform")]
-        
         # Should either detect patterns or have opportunities
         total_suggestions = len(suggestions2)
         self.assertTrue(total_suggestions >= 0)  # Should not fail
