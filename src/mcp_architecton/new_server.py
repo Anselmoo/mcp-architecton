@@ -160,7 +160,7 @@ def list_patterns_impl() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(catalog_path.read_text())
-    except Exception:  # noqa: BLE001
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     patterns: list[dict[str, Any]] = data.get("patterns", [])
     return [p for p in patterns if p.get("category") != "Architecture"]
@@ -281,7 +281,8 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                     try:
                         if Path(f).is_file():
                             targets.append(f)
-                    except Exception:
+                    except (OSError, ValueError):
+                        # Skip invalid paths
                         pass
             if targets:
                 proc = subprocess.run(
@@ -319,7 +320,8 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
             if tmp_dir:
                 try:
                     shutil.rmtree(tmp_dir)
-                except Exception:
+                except (OSError, FileNotFoundError):
+                    # Directory cleanup failed, continue anyway
                     pass
 
     return {"results": results, "ruff": ruff_out}
@@ -332,7 +334,7 @@ def list_architectures_impl() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(catalog_path.read_text())
-    except Exception:  # noqa: BLE001
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     patterns: list[dict[str, Any]] = data.get("patterns", [])
     return [p for p in patterns if p.get("category") == "Architecture"]
@@ -430,11 +432,8 @@ def introduce_pattern_impl(
 
         Uses a marker to remain idempotent and runs a cleanup transform after append.
         """
-        try:
-            # Normalize key for marker readability
-            key = _canonical_pattern_name(name)
-        except Exception:
-            key = (name or "").strip().lower()
+        # Normalize key for marker readability
+        key = _canonical_pattern_name(name)
 
         marker = f"# --- mcp-architecton snippet: {key} ---"
         if marker in text:
@@ -875,7 +874,8 @@ def propose_architecture_impl(
                 for code_key, cnt in counts_dict.items():
                     try:
                         ruff_summary[str(code_key)] = ruff_summary.get(str(code_key), 0) + int(cnt)
-                    except Exception:
+                    except (ValueError, TypeError):
+                        # Skip non-numeric counts  
                         pass
 
     # Anti-pattern indicators snapshot (first source if present)
