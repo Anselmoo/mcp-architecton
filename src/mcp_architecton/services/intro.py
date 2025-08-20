@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Tuple
 
 from mcp_architecton.refactors import transform_code as _strategy_transform
+from mcp_architecton.snippets.aliases import NAME_ALIASES as _name_aliases
 from mcp_architecton.snippets.api import get_snippet
 from mcp_architecton.snippets.api import transform_code as _snippet_transform
 
