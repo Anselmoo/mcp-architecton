@@ -21,6 +21,14 @@ from mcp_architecton.services.patterns import (
     list_patterns_impl as svc_list_patterns_impl,
 )
 from mcp_architecton.services.scan import scan_anti_patterns_impl as svc_scan_anti_patterns_impl
+from mcp_architecton.services.enforce import (
+    enforce_target_impl as svc_enforce_target_impl,
+    enforce_ranked_impl as svc_enforce_ranked_impl,
+)
+from mcp_architecton.generators.refactor_generator import (
+    introduce_pattern_impl,
+    introduce_architecture_impl,
+)
 
 # Implementor snippets are optional; keep the server resilient if not present.
 NAME_ALIASES: dict[str, str] = {}
@@ -179,42 +187,6 @@ def analyze_architectures_impl(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
     return svc_analyze_architectures_impl(code=code, files=files)
-
-
-def introduce_pattern_impl(
-    name: str,
-    module_path: str,
-    dry_run: bool = False,
-    out_path: str | None = None,
-) -> dict[str, Any]:
-    """Create/append a scaffold for the named pattern into module_path with transforms and diff.
-
-    If module_path is a directory, apply transform/scaffold across all Python files under it
-    (recursively), optionally writing results to an out_path directory (mirrored structure).
-    Aggregates diffs for all changed files.
-    """
-    # Delegate to services.intro (keeps API stable, improves maintainability)
-    try:
-        from mcp_architecton.services.intro import introduce_impl  # type: ignore
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": f"intro service unavailable: {exc}"}
-    return introduce_impl(name=name, module_path=module_path, dry_run=dry_run, out_path=out_path)
-
-
-def introduce_architecture_impl(
-    name: str,
-    module_path: str,
-    dry_run: bool = False,
-    out_path: str | None = None,
-) -> dict[str, Any]:
-    """Introduce an architecture helper scaffold into the given module path.
-
-    Supports helper snippets like Repository, Unit of Work, Service Layer,
-    Message Bus, Domain Events, CQRS, MVC, Hexagonal, etc., if available in
-    implementors. Falls back gracefully when snippets aren't present.
-    """
-    # Reuse the same flow as pattern introduction; different snippet/transform names
-    return introduce_pattern_impl(name, module_path, dry_run=dry_run, out_path=out_path)
 
 
 def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
@@ -514,19 +486,11 @@ def tool_list_patterns() -> list[dict[str, Any]]:
     return list_patterns_impl()
 
 
-def list_patterns() -> list[dict[str, Any]]:
-    return list_patterns_impl()
-
-
 @app.tool(name="analyze-patterns")
 def tool_analyze_patterns(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
     """Detect design patterns in a code string or Python files (provide code or files)."""
-    return analyze_patterns_impl(code=code, files=files)
-
-
-def analyze_patterns(code: str | None = None, files: list[str] | None = None) -> dict[str, Any]:
     return analyze_patterns_impl(code=code, files=files)
 
 
@@ -536,17 +500,9 @@ def tool_analyze_metrics(code: str | None = None, files: list[str] | None = None
     return analyze_metrics_impl(code=code, files=files)
 
 
-def analyze_metrics(code: str | None = None, files: list[str] | None = None) -> dict[str, Any]:
-    return analyze_metrics_impl(code=code, files=files)
-
-
 @app.tool(name="list-architectures")
 def tool_list_architectures() -> list[dict[str, Any]]:
     """List recognized software architectures from the catalog."""
-    return list_architectures_impl()
-
-
-def list_architectures() -> list[dict[str, Any]]:
     return list_architectures_impl()
 
 
@@ -555,12 +511,6 @@ def tool_analyze_architectures(
     code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
     """Detect architecture styles in a code string or Python files (provide code or files)."""
-    return analyze_architectures_impl(code=code, files=files)
-
-
-def analyze_architectures(
-    code: str | None = None, files: list[str] | None = None
-) -> dict[str, Any]:
     return analyze_architectures_impl(code=code, files=files)
 
 
@@ -577,14 +527,6 @@ def tool_introduce_pattern(
     )
 
 
-def introduce_pattern(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
-) -> dict[str, Any]:
-    return introduce_pattern_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
-    )
-
-
 @app.tool(name="introduce-architecture")
 def tool_introduce_architecture(
     name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
@@ -593,14 +535,6 @@ def tool_introduce_architecture(
 
     Optional: dry_run (no writes) and out_path to write to a different file.
     """
-    return introduce_architecture_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
-    )
-
-
-def introduce_architecture(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
-) -> dict[str, Any]:
     return introduce_architecture_impl(
         name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
     )
@@ -689,6 +623,40 @@ def tool_thresholded_enforcement(
 ) -> dict[str, Any]:
     """Rank anti-pattern indicators and return top enforcement prompts with reasons."""
     return _thresholded_enforcement(code=code, files=files, max_suggestions=max_suggestions)
+
+
+@app.tool(name="enforce-target")
+def tool_enforce_target(
+    name: str,
+    paths: list[str],
+    scope: str = "hits",
+    dry_run: bool = True,
+    out_dir: str | None = None,
+    max_files: int | None = None,
+) -> dict[str, Any]:
+    """Enforce a specific pattern/architecture across paths (per-file introduce with diffs)."""
+    return svc_enforce_target_impl(
+        name=name,
+        paths=paths,
+        scope=scope,
+        dry_run=dry_run,
+        out_dir=out_dir,
+        max_files=max_files,
+    )
+
+
+@app.tool(name="enforce-ranked")
+def tool_enforce_ranked(
+    paths: list[str],
+    top_n: int = 3,
+    scope: str = "hits",
+    dry_run: bool = True,
+    out_dir: str | None = None,
+) -> dict[str, Any]:
+    """Run indicator scan, rank targets, and enforce the top-N suggestions across paths."""
+    return svc_enforce_ranked_impl(
+        paths=paths, top_n=top_n, scope=scope, dry_run=dry_run, out_dir=out_dir
+    )
 
 
 @app.tool(name="scan-anti-architectures")

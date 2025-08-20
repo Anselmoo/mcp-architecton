@@ -2,56 +2,88 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from mcp_architecton.analysis.ast_utils import analyze_code_for_patterns
 from mcp_architecton.detectors import registry as detector_registry
 
 
 def list_patterns_impl() -> list[dict[str, Any]]:
-    """List pattern entries from the catalog (non-architectures)."""
-    catalog_path = Path(__file__).resolve().parents[2] / "data" / "patterns" / "catalog.json"
-    if not catalog_path.exists():
-        return []
+    """List design patterns (non-architecture) from catalog if present.
+
+    Returns empty list on any error.
+    """
+    # Catalog default path relative to project root
+    catalog_path = Path(__file__).resolve().parents[3] / "data" / "patterns" / "catalog.json"
     try:
+        if not catalog_path.exists():
+            return []
         data = json.loads(catalog_path.read_text())
-    except Exception:  # noqa: BLE001
+        items = (
+            cast(list[dict[str, Any]], data.get("patterns", [])) if isinstance(data, dict) else []
+        )
+        out: list[dict[str, Any]] = []
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            # Exclude Architecture category
+            if str(it.get("category", "")).lower() == "architecture":
+                continue
+            out.append(it)
+        return out
+    except Exception:
         return []
-    patterns: list[dict[str, Any]] = data.get("patterns", [])
-    return [p for p in patterns if p.get("category") != "Architecture"]
 
 
 def analyze_patterns_impl(
-    code: str | None = None,
-    files: list[str] | None = None,
+    code: str | None = None, files: list[str] | None = None
 ) -> dict[str, Any]:
-    """Analyze code or files and return design pattern findings.
+    """Detect design patterns in a code string or Python files (provide code or files).
 
-    Uses AST-based detectors via analyze_code_for_patterns.
+    Returns: {"findings": [...]} with 'source' on each finding. If neither input is provided,
+    returns {"error": "Provide 'code' or 'files'"}.
     """
     if not code and not files:
         return {"error": "Provide 'code' or 'files'"}
 
-    texts: list[tuple[str, str]] = []
-    if code:
-        texts.append(("<input>", code))
+    findings: list[dict[str, Any]] = []
+
+    if code is not None:
+        try:
+            res = analyze_code_for_patterns(code, detector_registry)
+        except Exception as exc:  # noqa: BLE001
+            findings.append({"source": "<input>", "error": str(exc)})
+        else:
+            for r in cast(list[dict[str, Any]], res or []):
+                out = dict(r)
+                # Normalize key 'name' -> 'pattern' if needed
+                if "pattern" not in out and "name" in out:
+                    out["pattern"] = out.get("name")
+                out["source"] = "<input>"
+                findings.append(out)
+
     if files:
         for f in files:
             p = Path(f)
             try:
-                texts.append((str(p), p.read_text()))
-            except (FileNotFoundError, PermissionError, OSError) as exc:
-                texts.append((str(p), f"<read-error: {exc}>"))
-
-    findings: list[dict[str, Any]] = []
-    for label, text in texts:
-        try:
-            results = analyze_code_for_patterns(text, detector_registry)
-        except Exception as exc:  # noqa: BLE001
-            findings.append({"source": label, "error": str(exc)})
-            continue
-        for r in results:
-            r["source"] = label
-            findings.append(r)
+                text = p.read_text()
+            except Exception as exc:  # noqa: BLE001
+                # Still return a record with source
+                findings.append({"source": str(p), "error": str(exc)})
+                continue
+            try:
+                res = analyze_code_for_patterns(text, detector_registry)
+            except Exception as exc:  # noqa: BLE001
+                findings.append({"source": str(p), "error": str(exc)})
+            else:
+                for r in cast(list[dict[str, Any]], res or []):
+                    out = dict(r)
+                    if "pattern" not in out and "name" in out:
+                        out["pattern"] = out.get("name")
+                    out["source"] = str(p)
+                    findings.append(out)
 
     return {"findings": findings}
+
+
+__all__ = ["list_patterns_impl", "analyze_patterns_impl"]

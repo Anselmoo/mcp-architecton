@@ -9,7 +9,14 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ..snippets.catalog import CatalogEntry
+try:  # pragma: no cover - optional dependency
+    from ..snippets.catalog import CatalogEntry  # type: ignore
+except Exception:  # pragma: no cover
+
+    class CatalogEntry:  # type: ignore
+        pass
+
+
 from .architectures import ARCH_GENERATORS
 from .patterns import PATTERN_GENERATORS
 
@@ -23,4 +30,3 @@ BUILTINS: dict[str, Generator] = {
 }
 
 __all__ = ["Generator", "BUILTINS"]
-

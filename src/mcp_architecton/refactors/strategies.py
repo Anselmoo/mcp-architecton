@@ -1,260 +1,143 @@
-"""Refactor strategies using multi-AST tools with safe, idempotent edits.
-
-Contract:
-- Strategy = callable: (source: str) -> str | None, idempotent. Return None for no change.
-- transform_code(name, source):
-    1) Normalize name to a canonical key
-    2) Run key-specific strategy (if any)
-    3) Run generic transforms from snippets.transforms
-
-Backends used (best-effort):
-- LibCST (primary, preserves formatting)
-- Parso (syntax probing)
-- astroid (semantic probing) [optional]
-- tree-sitter (fast parsing) [optional]
-- ast-grep-py (pattern matching) [optional]
-- RedBaron (fallback CST) [optional]
-
-All imports are optional; failures fall back to no-ops. This module aims to
-produce minimally invasive but concrete edits to unblock scaffolding.
-"""
-
 from __future__ import annotations
 
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
-try:  # LibCST is required in project deps
-    import libcst as cst
-    from libcst import parse_module
+try:  # pragma: no cover - optional import for type
+    import libcst as cst  # type: ignore
+    from libcst import parse_module  # type: ignore
 except Exception:  # pragma: no cover
     cst = None  # type: ignore
     parse_module = None  # type: ignore
 
-try:  # Optional helpers (not strictly required at runtime)
-    import parso  # type: ignore
-except Exception:  # pragma: no cover
-    parso = None  # type: ignore
-
-try:
-    import astroid  # type: ignore
-except Exception:  # pragma: no cover
-    astroid = None  # type: ignore
-
-try:
-    from redbaron import RedBaron  # type: ignore
-except Exception:  # pragma: no cover
-    RedBaron = None  # type: ignore
-
-try:
-    from tree_sitter import Language, Parser  # type: ignore
-    from tree_sitter_languages import get_language  # type: ignore
-except Exception:  # pragma: no cover
-    Language = None  # type: ignore
-    Parser = None  # type: ignore
-    get_language = None  # type: ignore
-
-try:
-    from ast_grep_py import AstGrep  # type: ignore
-except Exception:  # pragma: no cover
-    AstGrep = None  # type: ignore
-
-try:
-    # Generic transforms from snippets
-    from mcp_architecton.snippets.transforms import transform_generic
-except Exception:  # pragma: no cover
-
-    def transform_generic(source: str) -> Optional[str]:  # type: ignore
-        return None
-
-
-try:  # alias normalization
-    from mcp_architecton.snippets.aliases import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
-except Exception:  # pragma: no cover
-    _aliases: Dict[str, str] = {}
-else:
-    _aliases = dict(_IMPL_ALIASES)
-
-
 Strategy = Callable[[str], Optional[str]]
 
-
-def _canon(name: str) -> str:
-    k = (name or "").strip().lower()
-    return _aliases.get(k, k)
+_STRATEGIES: dict[str, Strategy] = {}
 
 
-def _append_snippet_marker(text: str, marker_key: str, body: str) -> str:
-    marker = f"# --- mcp-architecton strategy: {marker_key} ---"
-    if marker in text:
+def _canon(name: str | None) -> str:
+    if not name:
+        return ""
+    return name.strip().lower()
+
+
+def register_strategy(name: str, fn: Strategy) -> None:
+    _STRATEGIES[_canon(name)] = fn
+
+
+def _append_snippet_marker(text: str, key: str, body: str) -> str:
+    key_c = _canon(key)
+    marker_start = f"# --- mcp-architecton strategy: {key_c} ---"
+    marker_end = "# --- end strategy ---"
+    if marker_start in text:
         return text
-    return text.rstrip() + "\n\n" + marker + "\n" + body.rstrip() + "\n# --- end strategy ---\n"
+    prefix = (text.rstrip() + "\n\n") if text else ""
+    return f"{prefix}{marker_start}\n{body}\n{marker_end}\n"
 
 
-def _safe_libcst_insert_class(source: str, class_code: str) -> Optional[str]:
-    if not cst or not parse_module:
+def _safe_libcst_insert_class(source: str, class_src: str) -> Optional[str]:
+    if not cst or not parse_module:  # pragma: no cover - environment without libcst
         return None
     try:
-        mod = parse_module(source)
-        # Quick presence check: if class with same name exists, no-op
-        class_name = class_code.split()[1].split("(")[0].strip()
-
-        class Finder(cst.CSTVisitor):
-            def __init__(self) -> None:
-                self.found = False
-
-            def visit_ClassDef(self, node: cst.ClassDef) -> None:  # type: ignore[override]
-                if node.name.value == class_name:  # type: ignore[attr-defined]
-                    self.found = True
-
-        v = Finder()
-        mod.visit(v)
-        if v.found:
-            return None
-
-        # Append class at module end preserving formatting
-        new_body = list(mod.body) + [cst.parse_statement(class_code)]
-        new_mod = mod.with_changes(body=new_body)
-        return new_mod.code
-    except Exception:
+        # parse to ensure input is syntactically valid
+        parse_module(source)
+        # naive append at end as a SimpleStatementLine for safety
+        new_src = source.rstrip() + "\n\n" + class_src + "\n"
+        # ensure it parses
+        parse_module(new_src)
+        return new_src
+    except Exception:  # pragma: no cover - keep safe
         return None
 
 
-def _safe_libcst_insert_function(source: str, func_code: str) -> Optional[str]:
-    if not cst or not parse_module:
+def _safe_libcst_insert_function(source: str, func_src: str) -> Optional[str]:
+    if not cst or not parse_module:  # pragma: no cover
         return None
     try:
-        mod = parse_module(source)
-        func_name = func_code.split()[1].split("(")[0].strip()
-
-        class Finder(cst.CSTVisitor):
-            def __init__(self) -> None:
-                self.found = False
-
-            def visit_FunctionDef(self, node: cst.FunctionDef) -> None:  # type: ignore[override]
-                if node.name.value == func_name:  # type: ignore[attr-defined]
-                    self.found = True
-
-        v = Finder()
-        mod.visit(v)
-        if v.found:
-            return None
-
-        new_body = list(mod.body) + [cst.parse_statement(func_code)]
-        new_mod = mod.with_changes(body=new_body)
-        return new_mod.code
-    except Exception:
+        new_src = source.rstrip() + "\n\n" + func_src + "\n"
+        parse_module(new_src)
+        return new_src
+    except Exception:  # pragma: no cover
         return None
 
 
-# --- Concrete strategies ---
+# Built-in minimal strategies using simple scaffolds; integrate with generators later if needed.
 
 
-def _strategy_singleton(source: str) -> Optional[str]:
-    """Ensure a minimal Singleton class exists or is correctly shaped.
-
-    Conservative: if any class named 'Singleton' exists, do nothing.
-    Otherwise, append a minimal, idempotent class with __new__.
-    """
-    snippet = (
+def _singleton_strategy(src: str) -> Optional[str]:
+    body = (
         "class Singleton:\n"
         "    _instance = None\n\n"
-        "    def __new__(cls, *args, **kwargs):  # pragma: no cover - scaffold\n"
+        "    def __new__(cls, *args, **kwargs):\n"
         "        if cls._instance is None:\n"
         "            cls._instance = super().__new__(cls)\n"
         "        return cls._instance\n"
     )
-    out = _safe_libcst_insert_class(source, snippet)
-    if isinstance(out, str):
-        return out
-    # fallback marker append
-    return _append_snippet_marker(source, "singleton", snippet)
+    appended = _append_snippet_marker(src, "singleton", body)
+    return None if appended == src else appended
 
 
-def _strategy_facade_function(source: str) -> Optional[str]:
-    snippet = (
-        "def facade_function(*args, **kwargs):  # pragma: no cover - scaffold\n"
-        '    """A thin facade function orchestrating multiple collaborators."""\n'
-        "    # TODO: call into subsystems and aggregate results\n"
-        "    raise NotImplementedError\n"
-    )
-    out = _safe_libcst_insert_function(source, snippet)
-    if isinstance(out, str):
-        return out
-    return _append_snippet_marker(source, "facade_function", snippet)
-
-
-def _strategy_observer(source: str) -> Optional[str]:
-    snippet = (
+def _observer_strategy(src: str) -> Optional[str]:
+    body = (
         "class Observable:\n"
         "    def __init__(self) -> None:\n"
-        "        self._subs: dict[str, list] = {}\n\n"
-        "    def subscribe(self, event: str, handler) -> None:\n"
+        "        self._subs = {}\n\n"
+        "    def subscribe(self, event, handler):\n"
         "        self._subs.setdefault(event, []).append(handler)\n\n"
-        "    def notify(self, event: str, payload):  # pragma: no cover - scaffold\n"
+        "    def notify(self, event, payload):\n"
         "        for h in self._subs.get(event, []):\n"
         "            h(payload)\n"
     )
-    out = _safe_libcst_insert_class(source, snippet)
-    if isinstance(out, str):
-        return out
-    return _append_snippet_marker(source, "observer", snippet)
+    out = _append_snippet_marker(src, "observer", body)
+    return None if out == src else out
 
 
-def _strategy_strategy(source: str) -> Optional[str]:
-    # Provide Strategy/Context minimal scaffold only if absent
-    snippet = (
+def _facade_function_strategy(src: str) -> Optional[str]:
+    body = (
+        "def facade_function(*args, **kwargs):\n"
+        '    """A thin facade function orchestrating multiple collaborators."""\n'
+        "    raise NotImplementedError\n"
+    )
+    out = _append_snippet_marker(src, "facade_function", body)
+    return None if out == src else out
+
+
+def _strategy_strategy(src: str) -> Optional[str]:
+    body = (
         "from abc import ABC, abstractmethod\n\n"
         "class Strategy(ABC):\n"
         "    @abstractmethod\n"
-        "    def execute(self, data):  # pragma: no cover - scaffold\n"
+        "    def execute(self, data):\n"
         "        raise NotImplementedError\n\n"
         "class Context:\n"
-        "    def __init__(self, strategy: Strategy) -> None:\n"
-        "        self._strategy = strategy\n\n"
-        "    def process(self, data):\n"
-        "        return self._strategy.execute(data)\n"
+        "    def __init__(self, strategy: Strategy):\n"
+        "        self._strategy = strategy\n"
     )
-    out = _safe_libcst_insert_class(source, "class Strategy(ABC):\n    pass\n")
-    if isinstance(out, str):
-        # The quick check inserted a placeholder; now replace with full snippet via marker append
-        return _append_snippet_marker(out, "strategy", snippet)
-    return _append_snippet_marker(source, "strategy", snippet)
+    out = _append_snippet_marker(src, "strategy", body)
+    return None if out == src else out
 
 
-# Registry and API
-
-
-_STRATEGIES: Dict[str, Strategy] = {
-    "singleton": _strategy_singleton,
-    "facade_function": _strategy_facade_function,
-    "observer": _strategy_observer,
-    "strategy": _strategy_strategy,
-}
-
-
-def register_strategy(key: str, fn: Strategy) -> None:
-    _STRATEGIES[_canon(key)] = fn
+# register minimal built-ins
+register_strategy("singleton", _singleton_strategy)
+register_strategy("observer", _observer_strategy)
+register_strategy("facade_function", _facade_function_strategy)
+register_strategy("strategy", _strategy_strategy)
 
 
 def transform_code(name: str, source: str) -> Optional[str]:
+    """Transform code using a registered strategy by name.
+
+    Returns None if no change is needed or strategy not found.
+    """
     key = _canon(name)
-    # Key-specific first
     fn = _STRATEGIES.get(key)
-    if fn:
-        try:
-            out = fn(source)
-            if isinstance(out, str) and out != source:
-                return out
-        except Exception:
-            pass
-    # Generic transforms as fallback
+    if not fn:
+        # generic fallback: no-op
+        return None
     try:
-        gout = transform_generic(source)
-        if isinstance(gout, str) and gout != source:
-            return gout
+        result = fn(source)
+        if result is None or result == source:
+            return None
+        return result
     except Exception:
-        pass
-    return None
-
-
-__all__ = ["Strategy", "register_strategy", "transform_code"]
+        # Swallow and fallback to None
+        return None

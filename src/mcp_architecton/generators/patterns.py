@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ..snippets.catalog import CatalogEntry
+try:  # pragma: no cover - optional dependency
+    from ..snippets.catalog import CatalogEntry  # type: ignore
+except Exception:  # pragma: no cover
 
-Generator = Callable[[str, Optional[CatalogEntry]], str | None]
+    class CatalogEntry:  # type: ignore
+        pass
 
 
-def gen_strategy(_: str, __: Optional[CatalogEntry]) -> str | None:
+Generator = Callable[[str, CatalogEntry | None], str | None]
+
+
+def gen_strategy(_: str, __: CatalogEntry | None) -> str | None:
     return (
         '''
 from __future__ import annotations
@@ -52,7 +58,7 @@ class Context:
     ).strip()
 
 
-def gen_singleton(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_singleton(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Singleton:
@@ -66,7 +72,7 @@ class Singleton:
     ).strip()
 
 
-def gen_facade(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_facade(_: str, __: CatalogEntry | None) -> str | None:
     return (
         '''
 class _SubsystemA:
@@ -93,7 +99,7 @@ class Facade:
     ).strip()
 
 
-def gen_facade_function(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_facade_function(_: str, __: CatalogEntry | None) -> str | None:
     return (
         '''
 def facade_function(*args, **kwargs):  # pragma: no cover - scaffold
@@ -104,7 +110,7 @@ def facade_function(*args, **kwargs):  # pragma: no cover - scaffold
     ).strip()
 
 
-def gen_observer(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_observer(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -126,7 +132,7 @@ class Observable:
     ).strip()
 
 
-def gen_command(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_command(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Command:  # pragma: no cover - scaffold
@@ -148,7 +154,7 @@ class Invoker:
     ).strip()
 
 
-def gen_blackboard(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_blackboard(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Blackboard:
@@ -164,7 +170,7 @@ class Blackboard:
     ).strip()
 
 
-def gen_borg(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_borg(_: str, __: CatalogEntry | None) -> str | None:
     return (
         '''
 class Borg:
@@ -189,7 +195,7 @@ class SingletonBorg(Borg):
     ).strip()
 
 
-def gen_catalog(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_catalog(_: str, __: CatalogEntry | None) -> str | None:
     entry = __ or {}
     desc = str(entry.get("intent") or entry.get("description") or "Simple in-memory catalog.")
     refs = entry.get("refs", []) or []
@@ -213,7 +219,7 @@ def gen_catalog(_: str, __: Optional[CatalogEntry]) -> str | None:
     ).strip()
 
 
-def gen_chaining_method(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_chaining_method(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Chainable:
@@ -224,7 +230,7 @@ class Chainable:
     ).strip()
 
 
-def gen_delegation_pattern(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_delegation_pattern(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Real:
@@ -238,7 +244,7 @@ class Delegator:
     ).strip()
 
 
-def gen_dependency_injection(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_dependency_injection(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Container:
@@ -249,7 +255,7 @@ class Container:
     ).strip()
 
 
-def gen_factory(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_factory(_: str, __: CatalogEntry | None) -> str | None:
     entry = __ or {}
     desc = str(
         entry.get("intent")
@@ -284,7 +290,7 @@ def gen_factory(_: str, __: Optional[CatalogEntry]) -> str | None:
     ).strip()
 
 
-def gen_graph_search(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_graph_search(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 def bfs(start, neighbors):  # pragma: no cover - scaffold
@@ -302,7 +308,7 @@ def bfs(start, neighbors):  # pragma: no cover - scaffold
     ).strip()
 
 
-def gen_hsm(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_hsm(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -326,7 +332,7 @@ class HSM:
     ).strip()
 
 
-def gen_lazy_evaluation(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_lazy_evaluation(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Lazy:
@@ -339,7 +345,7 @@ class Lazy:
     ).strip()
 
 
-def gen_memento(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_memento(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Memento:
@@ -348,7 +354,7 @@ class Memento:
     ).strip()
 
 
-def gen_pool(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_pool(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Pool:
@@ -359,7 +365,7 @@ class Pool:
     ).strip()
 
 
-def gen_registry(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_registry(_: str, __: CatalogEntry | None) -> str | None:
     entry = __ or {}
     desc = str(
         entry.get("intent")
@@ -388,7 +394,7 @@ def gen_registry(_: str, __: Optional[CatalogEntry]) -> str | None:
     ).strip()
 
 
-def gen_specification(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_specification(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Specification:
@@ -398,7 +404,7 @@ class Specification:
     ).strip()
 
 
-def gen_decorator(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_decorator(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from typing import Protocol, runtime_checkable
@@ -424,7 +430,7 @@ class Decorator(Component):
     ).strip()
 
 
-def gen_adapter(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_adapter(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Target:
@@ -445,7 +451,7 @@ class Adapter(Target):
     ).strip()
 
 
-def gen_bridge(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_bridge(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from abc import ABC, abstractmethod
@@ -471,7 +477,7 @@ class Abstraction:
     ).strip()
 
 
-def gen_builder(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_builder(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Builder:
@@ -482,7 +488,7 @@ class Builder:
     ).strip()
 
 
-def gen_composite(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_composite(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from typing import Iterable
@@ -506,7 +512,7 @@ class Composite(Component):
     ).strip()
 
 
-def gen_abstract_factory(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_abstract_factory(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from abc import ABC, abstractmethod
@@ -519,7 +525,7 @@ class AbstractFactory(ABC):
     ).strip()
 
 
-def gen_flyweight(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_flyweight(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 # Module-level cache for flyweight instances
@@ -537,7 +543,7 @@ def get_flyweight(key: str) -> object:  # pragma: no cover - scaffold
     ).strip()
 
 
-def gen_iterator(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_iterator(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class IterableCollection:
@@ -547,7 +553,7 @@ class IterableCollection:
     ).strip()
 
 
-def gen_mediator(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_mediator(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -586,7 +592,7 @@ class ComponentB:
     ).strip()
 
 
-def gen_factory_method(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_factory_method(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class ProductA: ...
@@ -603,7 +609,7 @@ def create_product(kind: str):  # pragma: no cover - scaffold
     ).strip()
 
 
-def gen_prototype(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_prototype(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 import copy
@@ -616,7 +622,7 @@ class Prototype:
     ).strip()
 
 
-def gen_proxy(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_proxy(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Subject:
@@ -634,7 +640,7 @@ class Proxy(Subject):
     ).strip()
 
 
-def gen_state(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_state(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -670,7 +676,7 @@ class ConcreteStateB(State):
     ).strip()
 
 
-def gen_template_method(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_template_method(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from abc import ABC, abstractmethod
@@ -690,7 +696,7 @@ class AbstractWorkflow(ABC):
     ).strip()
 
 
-def gen_chain_of_responsibility(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_chain_of_responsibility(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Handler:
@@ -701,7 +707,7 @@ class Handler:
     ).strip()
 
 
-def gen_visitor(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_visitor(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -727,7 +733,7 @@ class ConcreteElement(Element):
     ).strip()
 
 
-def gen_front_controller(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_front_controller(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class FrontController:
