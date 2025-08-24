@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "prompts": [
+    {
+      "id": "minimal-seam-integration",
+      "name": "Minimal seam integration (pattern/arch)",
+      "body": "Map roles to current code; propose a minimal seam to integrate '{name}' without changing public APIs. Limit to tiny diffs, show a short step list, and validate via unit tests + ast/libcst/py_compile. Return risks and a rollback note."
+    },
+    {
+      "id": "adapter-first-guardrail",
+      "name": "Adapter-first guardrail",
+      "body": "Identify client-facing API and keep it stable. Provide an Adapter facade that delegates to existing implementations. Show only 3–5 line diff chunks. Confirm no signature changes and behavior unchanged."
+    },
+    {
+      "id": "catalog-technique-pointer",
+      "name": "Catalog-guided technique (single)",
+      "body": "Pick 1 technique (Extract Function | Introduce Parameter Object | Replace Temp with Query). Propose the smallest patch plan that reduces coupling for '{hotspot}'. Output only 3–5 line diff chunks; include a quick test that should pass."
+    },
+    {
+      "id": "branch-by-abstraction",
+      "name": "Branch-by-Abstraction micro-plan",
+      "body": "Define an abstraction for '{capability}', implement old and new behind it, and wire via a minimal seam. No public API changes. Provide a two-commit plan and a rollback step."
+    },
+    {
+      "id": "strangler-fig",
+      "name": "Strangler Fig path",
+      "body": "Identify a boundary to route one call path through a facade. Provide the smallest viable patch. Stop if diff > ~30 lines. Validate with tests + ruff + ast/libcst/py_compile; return a green/stop decision."
+    }
+  ],
+  "subruns": [
+    {
+      "id": "single-technique-micro-refactor",
+      "name": "Single-technique micro-refactor",
+      "diff_budget_lines": 30,
+      "body": "Select one: Extract Function | Inline Function | Replace Temp with Query. Show only 3–5 line diff chunks. Do not touch public APIs. Provide a rollback snippet. Run tests + ruff + ast/libcst + py_compile. If diff > budget or tests fail, output 'NO-CHANGE'."
+    },
+    {
+      "id": "interface-freeze-gate",
+      "name": "Interface freeze gate",
+      "diff_budget_lines": 30,
+      "body": "List public APIs touched. Assert no signature changes. If any change, abort. Otherwise propose a minimal Adapter/Facade. Show small diff only; run tests + py_compile and return PASS/FAIL."
+    },
+    {
+      "id": "loop-to-pipeline",
+      "name": "Loop-to-pipeline nudge",
+      "diff_budget_lines": 30,
+      "body": "If a hot loop is found, apply Replace Loop with Pipeline for one function. Show diff chunks only. Add 1 unit test for equivalence. Gate with tests + ruff + libcst parse + py_compile, else NO-CHANGE."
+    },
+    {
+      "id": "conditional-simplification",
+      "name": "Conditional simplification",
+      "diff_budget_lines": 30,
+      "body": "Pick Decompose Conditional or Replace Nested Conditional with Guard Clauses for function '{name}'. Keep observable behavior the same. Diff chunks only; include rollback plan. Test + parsers required."
+    },
+    {
+      "id": "data-encapsulation",
+      "name": "Data encapsulation",
+      "diff_budget_lines": 30,
+      "body": "Apply Encapsulate Variable or Encapsulate Collection in '{module}' for a single field. Ensure no API change. Provide before/after access sites. Validate with tests + ast/libcst/py_compile; stop on failures."
+    }
+  ]
+}

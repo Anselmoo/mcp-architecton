@@ -7,7 +7,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/singleton",
         "https://www.geeksforgeeks.org/python/singleton-pattern-in-python-a-complete-guide/"
-      ]
+      ],
+      "prompt_hint": "Enforce single instance; hide constructor; provide accessor; avoid globals"
     },
     {
       "name": "Observer",
@@ -16,7 +17,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/observer",
         "https://github.com/faif/python-patterns/tree/master/patterns/behavioral/observer.py"
-      ]
+      ],
+      "prompt_hint": "Decouple subject and observers; notify subscribers; avoid direct calls"
     },
     {
       "name": "Factory Method",
@@ -25,7 +27,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/factory-method",
         "https://github.com/faif/python-patterns/tree/master/patterns/creational/factory.py"
-      ]
+      ],
+      "prompt_hint": "Create via factory; avoid direct constructors in clients; preserve call sites"
     },
     {
       "name": "Adapter",
@@ -34,7 +37,12 @@
       "refs": [
         "https://refactoring.guru/design-patterns/adapter",
         "https://github.com/faif/python-patterns/tree/master/patterns/structural/adapter.py"
-      ]
+      ],
+      "prompt_hint": "Stabilize client API with an adapter; delegate to existing impl; keep diff tiny",
+      "contract": {
+        "inputs": "Stable Target interface; client calls unchanged",
+        "outputs": "Same behavior via Adaptee; no observable changes"
+      }
     },
     {
       "name": "Strategy",
@@ -43,7 +51,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/strategy",
         "https://github.com/faif/python-patterns/tree/master/patterns/behavioral/strategy.py"
-      ]
+      ],
+      "prompt_hint": "Extract algorithm interface; inject at seam; no public API change"
     },
     {
       "name": "Layered Architecture",
@@ -52,7 +61,8 @@
       "refs": [
         "https://martinfowler.com/bliki/PresentationDomainDataLayering.html",
         "https://martinfowler.com/architecture/"
-      ]
+      ],
+      "prompt_hint": "Separate presentation/application/domain/infrastructure; depend inward; avoid cross-layer leaks"
     },
     {
       "name": "Hexagonal Architecture",
@@ -61,7 +71,8 @@
       "refs": [
         "https://alistair.cockburn.us/hexagonal-architecture/",
         "https://tsh.io/blog/hexagonal-architecture/"
-      ]
+      ],
+      "prompt_hint": "Isolate domain via ports/adapters; inject adapters; keep domain pure"
     },
     {
       "name": "Clean Architecture",
@@ -70,7 +81,8 @@
       "refs": [
         "https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html",
         "https://github.com/jasontaylordev/CleanArchitecture"
-      ]
+      ],
+      "prompt_hint": "Entities/use-cases/adapters; dependencies point inward; keep boundaries explicit"
     },
     {
       "name": "Microservices",
@@ -79,7 +91,8 @@
       "refs": [
         "https://martinfowler.com/articles/microservices.html",
         "https://microservices.io/patterns/microservices.html"
-      ]
+      ],
+      "prompt_hint": "Split by bounded context; independent services; lightweight APIs; avoid shared DB"
     },
     {
       "name": "Event-Driven Architecture",
@@ -88,7 +101,8 @@
       "refs": [
         "https://martinfowler.com/articles/201701-event-driven.html",
         "https://learn.microsoft.com/azure/architecture/guide/architecture-styles/event-driven"
-      ]
+      ],
+      "prompt_hint": "Decouple producers/consumers with events; async handlers; stable event contracts"
     },
     {
       "name": "CQRS",
@@ -97,7 +111,8 @@
       "refs": [
         "https://martinfowler.com/bliki/CQRS.html",
         "https://learn.microsoft.com/azure/architecture/patterns/cqrs"
-      ]
+      ],
+      "prompt_hint": "Separate commands and queries; isolate write and read models; keep models thin"
     },
     {
       "name": "Bridge",
@@ -106,7 +121,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/bridge",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/bridge.py"
-      ]
+      ],
+      "prompt_hint": "Separate Abstraction from Implementor; inject Implementor; keep Abstraction API stable"
     },
     {
       "name": "Composite",
@@ -115,7 +131,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/composite",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/composite.py"
-      ]
+      ],
+      "prompt_hint": "Unify Leaf and Composite under Component; clients treat them uniformly; keep operation names consistent"
     },
     {
       "name": "Decorator",
@@ -124,7 +141,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/decorator",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/decorator.py"
-      ]
+      ],
+      "prompt_hint": "Wrap Component; forward call then add behavior; do not modify Component interface"
     },
     {
       "name": "Facade",
@@ -133,7 +151,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/facade",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/facade.py"
-      ]
+      ],
+      "prompt_hint": "Introduce a thin facade; do not leak subsystem details; keep client API stable"
     },
     {
       "name": "Flyweight",
@@ -142,7 +161,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/flyweight",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/flyweight.py"
-      ]
+      ],
+      "prompt_hint": "Share intrinsic state; externalize extrinsic; reuse via cache"
     },
     {
       "name": "Front Controller",
@@ -151,7 +171,8 @@
       "refs": [
         "https://martinfowler.com/eaaCatalog/frontController.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/front_controller.py"
-      ]
+      ],
+      "prompt_hint": "Centralize request handling; route to handlers; share pre/post processing"
     },
     {
       "name": "MVC",
@@ -160,7 +181,8 @@
       "refs": [
         "https://martinfowler.com/eaaDev/uiArchs.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/mvc.py"
-      ]
+      ],
+      "prompt_hint": "Separate concerns; keep view passive; controller mediates; avoid coupling; preserve public API"
     },
     {
       "name": "Proxy",
@@ -169,7 +191,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/proxy",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/proxy.py"
-      ]
+      ],
+      "prompt_hint": "Introduce a surrogate keeping Subject API stable; intercept for caching/logging/security"
     },
     {
       "name": "3-tier",
@@ -178,7 +201,8 @@
       "refs": [
         "https://martinfowler.com/bliki/PresentationDomainDataLayering.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/structural/3-tier.py"
-      ]
+      ],
+      "prompt_hint": "Presentation, logic, data tiers; interfaces between tiers; no backdoor coupling"
     },
     {
       "name": "Chain of Responsibility",
@@ -187,7 +211,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/chain-of-responsibility",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/chain_of_responsibility.py"
-      ]
+      ],
+      "prompt_hint": "Link handlers; pass request along until handled; add handlers without modifying clients"
     },
     {
       "name": "Chaining Method",
@@ -196,7 +221,8 @@
       "refs": [
         "https://martinfowler.com/bliki/FluentInterface.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/chaining_method.py"
-      ]
+      ],
+      "prompt_hint": "Return self for fluent API; keep steps small; avoid surprising side effects"
     },
     {
       "name": "Command",
@@ -205,7 +231,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/command",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/command.py"
-      ]
+      ],
+      "prompt_hint": "Encapsulate actions as objects; invoker queues/executes; decouple from receiver"
     },
     {
       "name": "Iterator",
@@ -214,7 +241,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/iterator",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/iterator.py"
-      ]
+      ],
+      "prompt_hint": "Provide sequential access; hide collection internals; use iterator protocol"
     },
     {
       "name": "Mediator",
@@ -223,7 +251,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/mediator",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/mediator.py"
-      ]
+      ],
+      "prompt_hint": "Encapsulate interactions in mediator; components communicate only via mediator"
     },
     {
       "name": "Memento",
@@ -232,7 +261,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/memento",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/memento.py"
-      ]
+      ],
+      "prompt_hint": "Snapshot state for restore; keep originator encapsulated; small memento objects"
     },
     {
       "name": "Publish-Subscribe",
@@ -241,7 +271,8 @@
       "refs": [
         "https://martinfowler.com/eaaDev/Observers.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/publish_subscribe.py"
-      ]
+      ],
+      "prompt_hint": "Introduce an event bus; decouple publishers and subscribers; no direct calls; keep topics stable"
     },
     {
       "name": "Registry",
@@ -250,7 +281,8 @@
       "refs": [
         "https://martinfowler.com/eaaCatalog/Registry.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/registry.py"
-      ]
+      ],
+      "prompt_hint": "Central lookup API; explicit register/get; avoid implicit globals"
     },
     {
       "name": "Servant",
@@ -259,7 +291,8 @@
       "refs": [
         "https://martinfowler.com/eaaCatalog/ServiceLocator.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/servant.py"
-      ]
+      ],
+      "prompt_hint": "Extract shared functionality into a Servant; inject where needed; do not change client APIs"
     },
     {
       "name": "Specification",
@@ -268,7 +301,8 @@
       "refs": [
         "https://martinfowler.com/apsupp/spec.pdf",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/specification.py"
-      ]
+      ],
+      "prompt_hint": "Compose predicates with and/or/not; side-effect-free domain rules"
     },
     {
       "name": "State",
@@ -277,7 +311,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/state",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/state.py"
-      ]
+      ],
+      "prompt_hint": "Encapsulate states as objects; context delegates; explicit transitions"
     },
     {
       "name": "Template Method",
@@ -286,7 +321,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/template-method",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/template.py"
-      ]
+      ],
+      "prompt_hint": "Define algorithm skeleton in base; override steps in subclasses"
     },
     {
       "name": "Visitor",
@@ -295,7 +331,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/visitor",
         "https://github.com/faif/python-patterns/blob/master/patterns/behavioral/visitor.py"
-      ]
+      ],
+      "prompt_hint": "Separate operations from structures; accept/visit; double-dispatch"
     },
     {
       "name": "Abstract Factory",
@@ -304,7 +341,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/abstract-factory",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/abstract_factory.py"
-      ]
+      ],
+      "prompt_hint": "Create families of related products; hide concrete classes; keep client decoupled"
     },
     {
       "name": "Builder",
@@ -313,7 +351,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/builder",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/builder.py"
-      ]
+      ],
+      "prompt_hint": "Separate construction from representation; stepwise assemble; final build"
     },
     {
       "name": "Factory",
@@ -322,7 +361,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/factory-method",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/factory.py"
-      ]
+      ],
+      "prompt_hint": "Expose factory to create products; hide creation logic; keep client decoupled"
     },
     {
       "name": "Prototype",
@@ -331,7 +371,8 @@
       "refs": [
         "https://refactoring.guru/design-patterns/prototype",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/prototype.py"
-      ]
+      ],
+      "prompt_hint": "Clone existing instance; deep copy as needed; avoid constructors"
     },
     {
       "name": "Object Pool",
@@ -340,7 +381,8 @@
       "refs": [
         "https://martinfowler.com/eaaCatalog/Pool.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/pool.py"
-      ]
+      ],
+      "prompt_hint": "Reuse pooled instances; acquire/release API; pre-initialize if needed"
     },
     {
       "name": "Borg",
@@ -349,7 +391,8 @@
       "refs": [
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/borg.py",
         "https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html"
-      ]
+      ],
+      "prompt_hint": "Share state via shared __dict__; many instances, single state"
     },
     {
       "name": "Lazy Evaluation",
@@ -358,7 +401,8 @@
       "refs": [
         "https://martinfowler.com/bliki/LazyLoad.html",
         "https://github.com/faif/python-patterns/blob/master/patterns/creational/lazy_evaluation.py"
-      ]
+      ],
+      "prompt_hint": "Defer computation until needed; cache the result; idempotent access"
     },
     {
       "name": "Blackboard",
@@ -367,7 +411,8 @@
       "refs": [
         "https://en.wikipedia.org/wiki/Blackboard_(design_pattern)",
         "https://github.com/faif/python-patterns/blob/master/patterns/other/blackboard.py"
-      ]
+      ],
+      "prompt_hint": "Shared knowledge base; contributors post partial results; coordinator resolves"
     },
     {
       "name": "Graph Search",
@@ -376,7 +421,120 @@
       "refs": [
         "https://en.wikipedia.org/wiki/Graph_traversal",
         "https://github.com/faif/python-patterns/blob/master/patterns/other/graph_search.py"
+      ],
+      "prompt_hint": "Scaffold BFS/DFS traversal; pure functions; deterministic iteration"
+    },
+    {
+      "name": "Refactoring Techniques",
+      "category": "Refactoring",
+      "description": "General catalog of refactoring techniques and best practices.",
+      "refs": [
+        "https://refactoring.guru/refactoring/techniques",
+        "https://refactoring.com/catalog/",
+        "https://www.codesee.io/learning-center/code-refactoring"
       ]
+    }
+  ],
+  "refactorings": [
+    {
+      "name": "Extract Function",
+      "url": "https://refactoring.com/catalog/extractFunction.html",
+      "prompt_hint": "Isolate a cohesive block into a named function; pure if possible; keep behavior"
+    },
+    {
+      "name": "Inline Function",
+      "url": "https://refactoring.com/catalog/inlineFunction.html",
+      "prompt_hint": "Replace trivial function calls with body at call sites; simplify; preserve behavior"
+    },
+    {
+      "name": "Change Function Declaration",
+      "url": "https://refactoring.com/catalog/changeFunctionDeclaration.html",
+      "prompt_hint": "Rename/reorder parameters or add defaults; maintain backward compatibility"
+    },
+    {
+      "name": "Extract Class",
+      "url": "https://refactoring.com/catalog/extractClass.html",
+      "prompt_hint": "Move responsibilities to a new class; single responsibility; delegate to preserve API"
+    },
+    {
+      "name": "Move Function",
+      "url": "https://refactoring.com/catalog/moveFunction.html",
+      "prompt_hint": "Relocate function to a more appropriate module/class; update imports; keep behavior"
+    },
+    {
+      "name": "Move Field",
+      "url": "https://refactoring.com/catalog/moveField.html",
+      "prompt_hint": "Relocate state to its rightful owner; adjust accessors; maintain invariants"
+    },
+    {
+      "name": "Encapsulate Variable",
+      "url": "https://refactoring.com/catalog/encapsulateVariable.html",
+      "prompt_hint": "Replace direct variable access with getter/setter; enforce invariants"
+    },
+    {
+      "name": "Encapsulate Collection",
+      "url": "https://refactoring.com/catalog/encapsulateCollection.html",
+      "prompt_hint": "Hide collection behind add/remove/iterate API; don’t expose mutable internals"
+    },
+    {
+      "name": "Decompose Conditional",
+      "url": "https://refactoring.com/catalog/decomposeConditional.html",
+      "prompt_hint": "Extract condition and branches into named functions; improve readability"
+    },
+    {
+      "name": "Consolidate Conditional Expression",
+      "url": "https://refactoring.com/catalog/consolidateConditionalExpression.html",
+      "prompt_hint": "Combine equivalent outcomes; simplify branching without changing behavior"
+    },
+    {
+      "name": "Replace Temp with Query",
+      "url": "https://refactoring.com/catalog/replaceTempWithQuery.html",
+      "prompt_hint": "Replace temporary variables with a query method; keep intent clear; watch performance"
+    },
+    {
+      "name": "Replace Conditional with Polymorphism",
+      "url": "https://refactoring.com/catalog/replaceConditionalWithPolymorphism.html",
+      "prompt_hint": "Eliminate if/else by introducing polymorphic types/strategies; stable interface"
+    },
+    {
+      "name": "Introduce Parameter Object",
+      "url": "https://refactoring.com/catalog/introduceParameterObject.html",
+      "prompt_hint": "Group related parameters into a value object; reduce long parameter lists"
+    },
+    {
+      "name": "Replace Constructor with Factory Function",
+      "url": "https://refactoring.com/catalog/replaceConstructorWithFactoryFunction.html",
+      "prompt_hint": "Provide a named factory; hide complex construction; make intent explicit"
+    },
+    {
+      "name": "Replace Loop with Pipeline",
+      "url": "https://refactoring.com/catalog/replaceLoopWithPipeline.html",
+      "prompt_hint": "Use map/filter/reduce/comprehensions; keep steps clear; preserve order/behavior"
+    },
+    {
+      "name": "Split Loop",
+      "url": "https://refactoring.com/catalog/splitLoop.html",
+      "prompt_hint": "Separate loops by concern; simpler loops; keep overall complexity acceptable"
+    },
+    {
+      "name": "Split Variable",
+      "url": "https://refactoring.com/catalog/splitVariable.html",
+      "prompt_hint": "Use distinct variables for distinct purposes; avoid reuse that obscures intent"
+    },
+    {
+      "name": "Slide Statements",
+      "url": "https://refactoring.com/catalog/slideStatements.html",
+      "prompt_hint": "Move statements to maximize locality and remove duplicates; no behavior change"
+    },
+    {
+      "name": "Substitute Algorithm",
+      "url": "https://refactoring.com/catalog/substituteAlgorithm.html",
+      "prompt_hint": "Replace with a clearer algorithm; maintain observed behavior; add tests"
+    },
+    {
+      "name": "Replace Magic Literal",
+      "url": "https://refactoring.com/catalog/replaceMagicLiteral.html",
+      "prompt_hint": "Introduce named constants/enums for unexplained literals; improve readability"
     }
   ]
 }

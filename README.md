@@ -2,6 +2,40 @@
 
 An MCP server that analyzes Python code for design patterns and software architecture signals, and can scaffold pattern introductions.
 
+### Boilerplate header (scaffold guardrails)
+
+Generated scaffolds prepend a compact module docstring that enforces safe, minimal-diff integration:
+
+- Steps 1–5: role mapping → interface extraction → implementation → wiring via a small seam → validate and commit minimal diffs
+- Contract: states inputs/outputs invariants (e.g., public inputs unchanged; behavior unchanged)
+- Validation: toolset used to sanity-check edits (ast, parso, libcst, astroid, RedBaron, tree-sitter, py_compile)
+- Complexity: low/medium/high hint using LOC and top-level defs, with cues like Strangler Fig / Branch-by-Abstraction
+- Cross-ref: up to two links for the pattern/architecture and refactoring techniques (from `data/patterns/catalog.json`)
+- Prompt: one-line hint; may come from catalog’s `prompt_hint` when available
+
+Complexity heuristic (approx.):
+
+- low: <300 LOC and <15 top-level defs
+- medium: 300–799 LOC or 15–39 defs
+- high: ≥800 LOC or ≥40 defs
+
+This header is guidance only—the generator emits boilerplate scaffolds, not automatic refactors.
+
+See also:
+
+- `data/prompt_presets.json` for 5 prompts and 5 CI subrun recipes
+- `docs/prompt_templates.md` for copyable header and CI subrun templates
+
+### Prompt presets CLI
+
+List presets and print bodies:
+
+```shell
+uv run architecton-presets list prompts
+uv run architecton-presets list subruns
+uv run architecton-presets show prompts minimal-seam-integration
+```
+
 ## Quick start
 
 - Requires Python 3.10+
@@ -16,6 +50,33 @@ uv sync --dev
 ### Run the server
 
 ```shell
+uv run mcp-architecton
+```
+
+### Optional toggles: ast-grep and rope
+
+Runtime features are gated by environment variables and mirrored CLI flags:
+
+- ARCHITECTON_ENABLE_ASTGREP: enables ast-grep heuristics (top-level defs, long parameter lists, repeated literals). Default: enabled.
+- ARCHITECTON_ENABLE_ROPE: enables rope sanity parse and a dry-run rename preview validator in enforcement (hits scope). Default: enabled.
+
+You can set them via CLI flags when starting the server:
+
+```shell
+# enable/disable ast-grep
+uv run mcp-architecton --enable-astgrep
+uv run mcp-architecton --disable-astgrep
+
+# enable/disable rope
+uv run mcp-architecton --enable-rope
+uv run mcp-architecton --disable-rope
+```
+
+Or with environment variables:
+
+```shell
+set -x ARCHITECTON_ENABLE_ASTGREP 0  # fish shell example
+set -x ARCHITECTON_ENABLE_ROPE 1
 uv run mcp-architecton
 ```
 

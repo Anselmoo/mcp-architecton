@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Any, Callable
 
 try:  # pragma: no cover - optional dependency
     from ..snippets.catalog import CatalogEntry  # type: ignore
@@ -10,7 +10,7 @@ except Exception:  # pragma: no cover
         pass
 
 
-Generator = Callable[[str, CatalogEntry | None], str | None]
+Generator = Callable[[str, Any], str | None]
 
 
 def gen_strategy(_: str, __: CatalogEntry | None) -> str | None:
@@ -434,11 +434,13 @@ def gen_adapter(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Target:
-    def request(self) -> str: return "target"
+    def request(self) -> str:  # pragma: no cover - scaffold
+        return "target"
 
 
 class Adaptee:
-    def specific_request(self) -> str: return "adaptee"
+    def specific_request(self) -> str:
+        return "adaptee"
 
 
 class Adapter(Target):
@@ -747,6 +749,73 @@ class FrontController:
     ).strip()
 
 
+def gen_mvc(_: str, __: CatalogEntry | None) -> str | None:
+    return (
+        """
+class Model:
+    def __init__(self):
+        self._value = 0
+
+    def get_value(self) -> int:
+        return self._value
+
+    def set_value(self, v: int) -> None:
+        self._value = v
+
+
+class View:
+    def render(self, value: int) -> str:  # pragma: no cover - scaffold
+        return f"Value: {value}"
+
+
+class Controller:
+    def __init__(self, model: Model, view: View) -> None:
+        self.model, self.view = model, view
+
+    def increment(self) -> None:
+        self.model.set_value(self.model.get_value() + 1)
+
+    def show(self) -> str:
+        return self.view.render(self.model.get_value())
+"""
+    ).strip()
+
+
+def gen_publish_subscribe(_: str, __: CatalogEntry | None) -> str | None:
+    return (
+        """
+from __future__ import annotations
+
+from typing import Callable, DefaultDict
+
+
+class EventBus:
+    def __init__(self) -> None:
+        from collections import defaultdict
+
+        self._subs: DefaultDict[str, list[Callable]] = defaultdict(list)
+
+    def subscribe(self, topic: str, handler: Callable) -> None:
+        self._subs[topic].append(handler)
+
+    def publish(self, topic: str, payload) -> None:  # pragma: no cover - scaffold
+        for h in list(self._subs.get(topic, [])):
+            h(payload)
+"""
+    ).strip()
+
+
+def gen_servant(_: str, __: CatalogEntry | None) -> str | None:
+    return (
+        """
+class Servant:
+    def serve(self, target) -> str:  # pragma: no cover - scaffold
+        # provide shared functionality for various targets
+        return f"served:{type(target).__name__}"
+"""
+    ).strip()
+
+
 PATTERN_GENERATORS: dict[str, Generator] = {
     # Patterns (alphabetical)
     "abstract_factory": gen_abstract_factory,
@@ -769,6 +838,8 @@ PATTERN_GENERATORS: dict[str, Generator] = {
     "factory_method": gen_factory_method,
     "flyweight": gen_flyweight,
     "front_controller": gen_front_controller,
+    "mvc": gen_mvc,
+    "publish_subscribe": gen_publish_subscribe,
     "graph_search": gen_graph_search,
     "hsm": gen_hsm,
     "iterator": gen_iterator,
@@ -786,4 +857,5 @@ PATTERN_GENERATORS: dict[str, Generator] = {
     "strategy": gen_strategy,
     "template_method": gen_template_method,
     "visitor": gen_visitor,
+    "servant": gen_servant,
 }

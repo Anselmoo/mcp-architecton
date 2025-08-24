@@ -1,206 +1,386 @@
 """
-Refactored demo using the Facade pattern.
+Refactored AutoModel applying the Strategy pattern for tuner selection.
 
-This file intentionally replaces the heavy, framework-specific demo with a
-lightweight, dependency-free example that illustrates the Facade pattern.
-
-Contract (informal):
-- Inputs: sequences of numbers (x) and labels (y). Keep it simple for a demo.
-- Facade exposes: fit, predict, evaluate, export_model.
-- Internals: small subsystems (preprocessing, model building, training).
-
-The subsystems are kept minimal so the demo runs without extra packages.
+This mirrors the behavior of demo_file_large.AutoModel but injects a
+TunerSelectionStrategy to resolve the tuner from a name or class.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import List, Optional, Type, Union, Dict
+
+import keras
+import numpy as np
+import tensorflow as tf
+import tree
+
+from autokeras import blocks
+from autokeras import graph as graph_module
+from autokeras import pipeline
+from autokeras import tuners
+from autokeras.engine import head as head_module
+from autokeras.engine import node as node_module
+from autokeras.engine import tuner as tuner_module
+from autokeras.nodes import Input
+from autokeras.utils import data_utils
+from autokeras.utils import utils
 
 
-# --------------------------- Subsystems (internal) ---------------------------
+class TunerSelectionStrategy(ABC):
+    """Strategy interface for resolving a tuner.
 
-
-class _DataPreprocessor:
-    """Simple preprocessor that can normalize numeric inputs.
-
-    For a demo, we only compute and apply (x - mean) / std when enabled.
+    Contract
+    - input: a tuner identifier (str or subclass of AutoTuner)
+    - output: a subclass of AutoTuner suitable for instantiation
+    - errors: ValueError on unknown string identifiers
     """
 
-    def __init__(self, normalize: bool = True) -> None:
-        self.normalize = normalize
-        self._mean: Optional[float] = None
-        self._std: Optional[float] = None
-
-    @staticmethod
-    def _to_floats(data: Iterable[float]) -> List[float]:
-        return [float(v) for v in data]
-
-    @staticmethod
-    def _safe_std(values: Sequence[float]) -> float:
-        if not values:
-            return 1.0
-        mean = sum(values) / len(values)
-        var = sum((v - mean) ** 2 for v in values) / max(len(values) - 1, 1)
-        return (var**0.5) or 1.0
-
-    def fit(self, x: Iterable[float]) -> None:
-        if not self.normalize:
-            return
-        values = self._to_floats(x)
-        if not values:
-            self._mean, self._std = 0.0, 1.0
-            return
-        self._mean = sum(values) / len(values)
-        self._std = self._safe_std(values)
-
-    def transform(self, x: Iterable[float]) -> List[float]:
-        values = self._to_floats(x)
-        if not self.normalize or self._mean is None or self._std is None:
-            return values
-        return [(v - self._mean) / self._std for v in values]
-
-    def fit_transform(self, x: Iterable[float]) -> List[float]:
-        self.fit(x)
-        return self.transform(x)
+    @abstractmethod
+    def resolve(
+        self, tuner: Union[str, Type[tuner_module.AutoTuner]]
+    ) -> Type[tuner_module.AutoTuner]:
+        raise NotImplementedError
 
 
-class _TunerSelector:
-    """Selects a tuning strategy (mocked for demo purposes)."""
+class MappingTunerSelectionStrategy(TunerSelectionStrategy):
+    """Resolves tuner by looking up a mapping of name -> class."""
 
-    _VALID = {"greedy", "random", "hyperband", "bayesian"}
+    def __init__(self, mapping: Dict[str, Type[tuner_module.AutoTuner]]):
+        self._mapping = dict(mapping)
 
-    def __init__(
-        self, name: str = "greedy", max_trials: int = 100, seed: Optional[int] = None
-    ) -> None:
-        if name not in self._VALID:
-            raise ValueError(f"Unknown tuner '{name}'. Allowed: {sorted(self._VALID)}")
-        self.name = name
-        self.max_trials = int(max_trials)
-        self.seed = seed
-
-    def describe(self) -> str:
-        return f"Tuner(name={self.name}, max_trials={self.max_trials}, seed={self.seed})"
-
-
-class _SimpleModel:
-    """A tiny model that learns the average of y and predicts that constant.
-
-    - fit: stores the mean of y
-    - predict: returns that mean for each x
-    - evaluate: reports MAE against y
-    """
-
-    def __init__(self) -> None:
-        self._bias: float = 0.0
-        self._fitted: bool = False
-
-    @staticmethod
-    def _to_floats(data: Iterable[float]) -> List[float]:
-        return [float(v) for v in data]
-
-    def fit(self, x: Iterable[float], y: Iterable[float]) -> None:  # noqa: ARG002 (x unused for this simple model)
-        labels = self._to_floats(y)
-        if labels:
-            self._bias = sum(labels) / len(labels)
-        else:
-            self._bias = 0.0
-        self._fitted = True
-
-    def predict(self, x: Iterable[float]) -> List[float]:
-        if not self._fitted:
-            raise RuntimeError("Model not fitted. Call fit() first.")
-        xs = self._to_floats(x)
-        return [self._bias for _ in xs]
-
-    def evaluate(self, x: Iterable[float], y: Iterable[float]) -> float:
-        preds = self.predict(x)
-        labels = self._to_floats(y)
-        if not labels:
-            return 0.0
-        n = min(len(preds), len(labels))
-        if n == 0:
-            return 0.0
-        mae = sum(abs(preds[i] - labels[i]) for i in range(n)) / n
-        return mae
+    def resolve(
+        self, tuner: Union[str, Type[tuner_module.AutoTuner]]
+    ) -> Type[tuner_module.AutoTuner]:
+        if isinstance(tuner, str) and tuner in self._mapping:
+            return self._mapping[tuner]
+        raise ValueError(
+            "Expected the tuner argument to be one of {keys}, but got {tuner}".format(
+                keys=sorted(self._mapping.keys()), tuner=tuner
+            )
+        )
 
 
-# ------------------------------- Public Facade -------------------------------
+TUNER_CLASSES: Dict[str, Type[tuner_module.AutoTuner]] = {
+    "bayesian": tuners.BayesianOptimization,
+    "random": tuners.RandomSearch,
+    "hyperband": tuners.Hyperband,
+    "greedy": tuners.Greedy,
+}
 
 
-@dataclass
-class TrainingHistory:
-    """Minimal training history for the demo."""
+def get_tuner_class(tuner: Union[str, Type[tuner_module.AutoTuner]]):
+    if isinstance(tuner, str) and tuner in TUNER_CLASSES:
+        return TUNER_CLASSES.get(tuner)
+    else:
+        raise ValueError(
+            'Expected the tuner argument to be one of "greedy", '
+            '"random", "hyperband", or "bayesian", '
+            "but got {tuner}".format(tuner=tuner)
+        )
 
-    tuner: str
-    trials_run: int
-    metric_name: str
-    metric_value: float
 
+class AutoModel(object):
+    """A Model defined by inputs and outputs, with Strategy for tuner selection.
 
-class AutoModelFacade:
-    """Facade that streamlines pipeline setup and usage.
-
-    It hides the details of preprocessing, (mock) tuning, model building,
-    and the training/eval loop behind a small, easy-to-use API.
+    The public API mirrors the original AutoModel to make this drop-in for demo purposes.
     """
 
     def __init__(
         self,
-        *,
-        tuner: str = "greedy",
-        max_trials: int = 100,
+        inputs: Union[Input, List[Input]],
+        outputs: Union[head_module.Head, node_module.Node, list],
         project_name: str = "auto_model",
-        directory: Optional[str] = None,
+        max_trials: int = 100,
+        directory: Union[str, Path, None] = None,
+        objective: str = "val_loss",
+        tuner: Union[str, Type[tuner_module.AutoTuner]] = "greedy",
+        overwrite: bool = False,
         seed: Optional[int] = None,
-        normalize: bool = True,
-    ) -> None:
-        self.project_name = project_name
-        self.directory = directory
-        self._pre = _DataPreprocessor(normalize=normalize)
-        self._tuner = _TunerSelector(name=tuner, max_trials=max_trials, seed=seed)
-        self._model = _SimpleModel()
-        self._last_history: Optional[TrainingHistory] = None
+        max_model_size: Optional[int] = None,
+        tuner_strategy: Optional[TunerSelectionStrategy] = None,
+        **kwargs,
+    ):
+        self.inputs = tree.flatten(inputs)
+        self.outputs = tree.flatten(outputs)
+        self.seed = seed
+        if seed:
+            np.random.seed(seed)
+            tf.random.set_seed(seed)
 
-    # ------------------------------- Core API -------------------------------
+        # Inject Strategy (defaults to mapping-based)
+        self._tuner_strategy = tuner_strategy or MappingTunerSelectionStrategy(TUNER_CLASSES)
+
+        # Initialize the hyper_graph.
+        graph = self._build_graph()
+
+        # Use Strategy for string tuner identifiers
+        if isinstance(tuner, str):
+            tuner = self._tuner_strategy.resolve(tuner)
+
+        self.tuner = tuner(
+            hypermodel=graph,
+            overwrite=overwrite,
+            objective=objective,
+            max_trials=max_trials,
+            directory=directory,
+            seed=self.seed,
+            project_name=project_name,
+            max_model_size=max_model_size,
+            **kwargs,
+        )
+        self.overwrite = overwrite
+        self._heads = [output_node.in_blocks[0] for output_node in self.outputs]
+
+    @property
+    def objective(self):
+        return self.tuner.objective
+
+    @property
+    def max_trials(self):
+        return self.tuner.max_trials
+
+    @property
+    def directory(self):
+        return self.tuner.directory
+
+    @property
+    def project_name(self):
+        return self.tuner.project_name
+
+    def _assemble(self):
+        """Assemble the Blocks based on the input output nodes."""
+        inputs = tree.flatten(self.inputs)
+        outputs = tree.flatten(self.outputs)
+
+        middle_nodes = [input_node.get_block()(input_node) for input_node in inputs]
+
+        # Merge the middle nodes.
+        if len(middle_nodes) > 1:
+            output_node = blocks.Merge()(middle_nodes)
+        else:
+            output_node = middle_nodes[0]
+
+        outputs = tree.flatten([output_blocks(output_node) for output_blocks in outputs])
+        return graph_module.Graph(inputs=inputs, outputs=outputs)
+
+    def _build_graph(self):
+        # Using functional API.
+        if all([isinstance(output, node_module.Node) for output in self.outputs]):
+            graph = graph_module.Graph(inputs=self.inputs, outputs=self.outputs)
+        # Using input/output API.
+        elif all([isinstance(output, head_module.Head) for output in self.outputs]):
+            # Clear session to reset get_uid(). The names of the blocks will
+            # start to count from 1 for new blocks in a new AutoModel afterwards.
+            keras.backend.clear_session()
+            graph = self._assemble()
+            self.outputs = graph.outputs
+            keras.backend.clear_session()
+
+        return graph
 
     def fit(
         self,
-        x: Iterable[float],
-        y: Iterable[float],
-        *,
-        metric_name: str = "mae",
-    ) -> TrainingHistory:
-        """Fit the model and return a minimal training history.
+        x=None,
+        y=None,
+        batch_size=32,
+        epochs=None,
+        callbacks=None,
+        validation_split=0.2,
+        validation_data=None,
+        verbose=1,
+        **kwargs,
+    ):
+        """Search for the best model and hyperparameters for the AutoModel."""
+        # Check validation information.
+        if not validation_data and not validation_split:
+            raise ValueError(
+                "Either validation_data or a non-zero validation_split should be provided."
+            )
 
-        For a demo, we run a single "best" trial using the chosen tuner name
-        (no actual search), and compute the metric on the training set.
-        """
-        x_proc = self._pre.fit_transform(x)
-        self._model.fit(x_proc, y)
-        metric = self._model.evaluate(x_proc, y)
-        history = TrainingHistory(
-            tuner=self._tuner.describe(),
-            trials_run=1,
-            metric_name=metric_name,
-            metric_value=metric,
+        if validation_data:
+            validation_split = 0
+
+        dataset, validation_data = self._convert_to_dataset(
+            x=x, y=y, validation_data=validation_data, batch_size=batch_size
         )
-        self._last_history = history
+        self._analyze_data(dataset)
+        self._build_hyper_pipeline(dataset)
+
+        # Split the data with validation_split.
+        if validation_data is None and validation_split:
+            dataset, validation_data = data_utils.split_dataset(dataset, validation_split)
+
+        history = self.tuner.search(
+            x=dataset,
+            epochs=epochs,
+            callbacks=callbacks,
+            validation_data=validation_data,
+            validation_split=validation_split,
+            verbose=verbose,
+            **kwargs,
+        )
+
         return history
 
-    def predict(self, x: Iterable[float]) -> List[float]:
-        x_proc = self._pre.transform(x)
-        return self._model.predict(x_proc)
+    def _adapt(self, dataset, hms, batch_size):
+        if isinstance(dataset, tf.data.Dataset):
+            sources = data_utils.unzip_dataset(dataset)
+        else:
+            sources = tree.flatten(dataset)
+        adapted = []
+        for source, hm in zip(sources, hms):
+            source = hm.get_adapter().adapt(source, batch_size)
+            adapted.append(source)
+        if len(adapted) == 1:
+            return adapted[0]
+        return tf.data.Dataset.zip(tuple(adapted))
 
-    def evaluate(
-        self, x: Iterable[float], y: Iterable[float], *, metric_name: str = "mae"
-    ) -> Tuple[str, float]:
-        x_proc = self._pre.transform(x)
-        value = self._model.evaluate(x_proc, y)
-        return metric_name, value
+    def _check_data_format(self, dataset, validation=False, predict=False):
+        """Check if the dataset has the same number of IOs with the model."""
+        if validation:
+            in_val = " in validation_data"
+            if isinstance(dataset, tf.data.Dataset):
+                x = dataset
+                y = None
+            else:
+                x, y = dataset
+        else:
+            in_val = ""
+            x, y = dataset
 
-    def export_model(self) -> _SimpleModel:
-        return self._model
+        if isinstance(x, tf.data.Dataset) and y is not None:
+            raise ValueError(
+                "Expected y to be None when x is tf.data.Dataset{in_val}.".format(in_val=in_val)
+            )
 
+        if isinstance(x, tf.data.Dataset):
+            if not predict:
+                x_shapes, y_shapes = data_utils.dataset_shape(x)
+                x_shapes = tree.flatten(x_shapes)
+                y_shapes = tree.flatten(y_shapes)
+            else:
+                x_shapes = tree.flatten(data_utils.dataset_shape(x))
+        else:
+            x_shapes = [a.shape for a in tree.flatten(x)]
+            if not predict:
+                y_shapes = [a.shape for a in tree.flatten(y)]
 
-__all__ = ["AutoModelFacade", "TrainingHistory"]
+        if len(x_shapes) != len(self.inputs):
+            raise ValueError(
+                "Expected x{in_val} to have {input_num} arrays, but got {data_num}".format(
+                    in_val=in_val,
+                    input_num=len(self.inputs),
+                    data_num=len(x_shapes),
+                )
+            )
+        if not predict and len(y_shapes) != len(self.outputs):
+            raise ValueError(
+                "Expected y{in_val} to have {output_num} arrays, but got {data_num}".format(
+                    in_val=in_val,
+                    output_num=len(self.outputs),
+                    data_num=len(y_shapes),
+                )
+            )
+
+    def _analyze_data(self, dataset):
+        input_analysers = [node.get_analyser() for node in self.inputs]
+        output_analysers = [head.get_analyser() for head in self._heads]
+        analysers = input_analysers + output_analysers
+        for x, y in dataset:
+            x = tree.flatten(x)
+            y = tree.flatten(y)
+            for item, analyser in zip(x + y, analysers):
+                analyser.update(item)
+
+        for analyser in analysers:
+            analyser.finalize()
+
+        for hm, analyser in zip(self.inputs + self._heads, analysers):
+            hm.config_from_analyser(analyser)
+
+    def _build_hyper_pipeline(self, dataset):
+        self.tuner.hyper_pipeline = pipeline.HyperPipeline(
+            inputs=[node.get_hyper_preprocessors() for node in self.inputs],
+            outputs=[head.get_hyper_preprocessors() for head in self._heads],
+        )
+        self.tuner.hypermodel.hyper_pipeline = self.tuner.hyper_pipeline
+
+    def _convert_to_dataset(self, x, y, validation_data, batch_size):
+        """Convert the data to tf.data.Dataset."""
+        # Convert training data.
+        self._check_data_format((x, y))
+        if isinstance(x, tf.data.Dataset):
+            dataset = x
+            x = dataset.map(lambda x, y: x)
+            y = dataset.map(lambda x, y: y)
+        x = self._adapt(x, self.inputs, batch_size)
+        y = self._adapt(y, self._heads, batch_size)
+        dataset = tf.data.Dataset.zip((x, y))
+
+        # Convert validation data
+        if validation_data:
+            self._check_data_format(validation_data, validation=True)
+            if isinstance(validation_data, tf.data.Dataset):
+                x = validation_data.map(lambda x, y: x)
+                y = validation_data.map(lambda x, y: y)
+            else:
+                x, y = validation_data
+            x = self._adapt(x, self.inputs, batch_size)
+            y = self._adapt(y, self._heads, batch_size)
+            validation_data = tf.data.Dataset.zip((x, y))
+
+        return dataset, validation_data
+
+    def _has_y(self, dataset):
+        """Remove y from the tf.data.Dataset if exists."""
+        shapes = data_utils.dataset_shape(dataset)
+        # Only one or less element in the first level.
+        if len(shapes) <= 1:
+            return False
+        # The first level has more than 1 element.
+        # The tree has 2 levels.
+        for shape in shapes:
+            if isinstance(shape, tuple):
+                return True
+        # The tree has one level.
+        # It matches the single IO case.
+        return len(shapes) == 2 and len(self.inputs) == 1 and len(self.outputs) == 1
+
+    def predict(self, x, batch_size=32, verbose=1, **kwargs):
+        """Predict the output for a given testing data."""
+        if isinstance(x, tf.data.Dataset) and self._has_y(x):
+            x = x.map(lambda x, y: x)
+        self._check_data_format((x, None), predict=True)
+        dataset = self._adapt(x, self.inputs, batch_size)
+        pipeline = self.tuner.get_best_pipeline()
+        model = self.tuner.get_best_model()
+        dataset = pipeline.transform_x(dataset)
+        dataset = tf.data.Dataset.zip((dataset, dataset))
+        y = model.predict(dataset, **kwargs)
+        y = utils.predict_with_adaptive_batch_size(
+            model=model, batch_size=batch_size, x=dataset, verbose=verbose, **kwargs
+        )
+        return pipeline.postprocess(y)
+
+    def evaluate(self, x, y=None, batch_size=32, verbose=1, **kwargs):
+        """Evaluate the best model for the given data."""
+        self._check_data_format((x, y))
+        if isinstance(x, tf.data.Dataset):
+            dataset = x
+            x = dataset.map(lambda x, y: x)
+            y = dataset.map(lambda x, y: y)
+        x = self._adapt(x, self.inputs, batch_size)
+        y = self._adapt(y, self._heads, batch_size)
+        dataset = tf.data.Dataset.zip((x, y))
+        pipeline = self.tuner.get_best_pipeline()
+        dataset = pipeline.transform(dataset)
+        model = self.tuner.get_best_model()
+        return utils.evaluate_with_adaptive_batch_size(
+            model=model, batch_size=batch_size, x=dataset, verbose=verbose, **kwargs
+        )
+
+    def export_model(self):
+        """Export the best Keras Model."""
+        return self.tuner.get_best_model()
