@@ -12,13 +12,10 @@ Usage:
 
 from __future__ import annotations
 
-import argparse
-import os
-import sys
 from pathlib import Path
 from typing import Any, cast
 
-import mcp_architecton.server as srv
+from mcp_architecton.server import scan_anti_patterns, thresholded_enforcement
 
 SKIP_DIRS = {
     ".git",
@@ -46,41 +43,14 @@ def discover_py_files(root: Path) -> list[str]:
     return files
 
 
-def _apply_cli_env_toggles(argv: list[str]) -> list[str]:
-    """Parse flags to enable/disable ast-grep and rope; return remaining args."""
-    parser = argparse.ArgumentParser(add_help=True, prog="scan_repo")
-    g = parser.add_mutually_exclusive_group()
-    g.add_argument("--enable-astgrep", action="store_true", help="Enable ast-grep heuristics")
-    g.add_argument("--disable-astgrep", action="store_true", help="Disable ast-grep heuristics")
-    h = parser.add_mutually_exclusive_group()
-    h.add_argument("--enable-rope", action="store_true", help="Enable rope checks")
-    h.add_argument("--disable-rope", action="store_true", help="Disable rope checks")
-    parser.add_argument(
-        "--dir", "-d", default=".", help="Root directory to scan (default: current dir)"
-    )
-    known, _ = parser.parse_known_args(argv)
-    if known.enable_astgrep:
-        os.environ["ARCHITECTON_ENABLE_ASTGREP"] = "1"
-    if known.disable_astgrep:
-        os.environ["ARCHITECTON_ENABLE_ASTGREP"] = "0"
-    if known.enable_rope:
-        os.environ["ARCHITECTON_ENABLE_ROPE"] = "1"
-    if known.disable_rope:
-        os.environ["ARCHITECTON_ENABLE_ROPE"] = "0"
-    # Return only the directory for now
-    return [known.dir]
-
-
 def main() -> int:
-    # Apply toggles and get directory to scan
-    dirs = _apply_cli_env_toggles(sys.argv[1:])
-    root = Path(dirs[0]).resolve()
+    root = Path(".").resolve()
     files = discover_py_files(root)
     if not files:
         print("No Python files found.")
         return 0
 
-    scan = srv.scan_anti_patterns(files=files)
+    scan = scan_anti_patterns(files=files)
     if "error" in scan:
         print(f"Error: {scan['error']}")
         return 2
@@ -102,7 +72,7 @@ def main() -> int:
                 indicator_counts[t] = indicator_counts.get(t, 0) + 1
 
     # Get thresholded suggestions (top 3 per file)
-    enforced = srv._thresholded_enforcement(files=files, max_suggestions=3)
+    enforced = thresholded_enforcement(files=files, max_suggestions=3)
 
     print("=== Anti-Pattern Indicators (counts across repo) ===")
     for k, v in sorted(indicator_counts.items(), key=lambda kv: (-kv[1], kv[0])):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -134,89 +133,6 @@ def scan_anti_patterns_impl(
                     ind.append({"type": "very_large_function", "lines": len(lines)})
                     recs.append("Extract methods (Template Method) or strategies")
                     break
-
-        # Supplement analysis with ast-grep if enabled/available: count top-level defs/classes quickly
-        if os.getenv("ARCHITECTON_ENABLE_ASTGREP", "1").lower() not in {"0", "false", "no"}:
-            try:
-                from ast_grep_py import SgRoot  # type: ignore
-
-                try:
-                    root = SgRoot(text, "python").root()
-                    top_fns = 0
-                    top_cls = 0
-                    for fn in root.find_all(kind="function_definition"):
-                        parent = fn.parent()
-                        if parent and parent.kind() == "module":
-                            top_fns += 1
-                        # Heuristic: long parameter lists via ast-grep
-                        try:
-                            params_node = fn.field("parameters")
-                            params_text = params_node.text() if params_node else ""
-                            # Count commas -> params ~ commas + 1 when not empty
-                            # Rough but cheap; parentheses included in text
-                            count_commas = params_text.count(",")
-                            # Avoid counting when empty params
-                            param_count = (
-                                0 if params_text.strip() in {"", "()"} else count_commas + 1
-                            )
-                            if param_count > 6:
-                                ind.append(
-                                    {
-                                        "type": "long_param_list",
-                                        "count": param_count,
-                                    }
-                                )
-                                recs.append(
-                                    "Introduce Parameter Object/Builder; consider Facade/Strategy seams"
-                                )
-                        except Exception:
-                            pass
-                    for cls in root.find_all(kind="class_definition"):
-                        parent = cls.parent()
-                        if parent and parent.kind() == "module":
-                            top_cls += 1
-                    # Heuristic: repeated string literals using ast-grep
-                    try:
-                        literal_counts: dict[str, int] = {}
-                        # Try a few likely node kinds for Python strings
-                        for kind in ("string", "string_literal", "string_content"):
-                            try:
-                                for s in root.find_all(kind=kind):
-                                    txt = s.text()
-                                    val = txt.strip()
-                                    if val:
-                                        literal_counts[val] = literal_counts.get(val, 0) + 1
-                            except Exception:
-                                continue
-                        # Threshold: any literal repeated 5+ times
-                        repeated = [k for k, v in literal_counts.items() if v >= 5]
-                        if repeated:
-                            ind.append(
-                                {
-                                    "type": "repeated_literals",
-                                    "literals": repeated[:3],
-                                    "count": len(repeated),
-                                }
-                            )
-                            recs.append(
-                                "Deduplicate constants (extract module-level constants or Enum)"
-                            )
-                    except Exception:
-                        pass
-                    if top_fns > 30 or top_cls > 30:
-                        ind.append(
-                            {
-                                "type": "many_top_level_defs",
-                                "functions": top_fns,
-                                "classes": top_cls,
-                            }
-                        )
-                        recs.append("Split module; introduce Facade/Package structure")
-                except Exception:
-                    pass
-            except Exception:
-                # ast-grep not installed/available – silently ignore
-                pass
 
         # Map duplicate recommendations once
         uniq_recs: list[str] = []

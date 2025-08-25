@@ -1,0 +1,309 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.11'
+  UV_CACHE_DIR: ~/.cache/uv
+
+jobs:
+  # Pre-commit and Code Quality (guarded if config exists)
+  pre-commit:
+    name: Pre-commit & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/uv.lock
+            **/pyproject.toml
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            uv-${{ runner.os }}-
+
+      - name: Install dependencies and pre-commit
+        run: |
+          uv sync --dev --locked
+          uv tool install pre-commit
+
+      - name: Run pre-commit hooks (if config present)
+        run: |
+          if [ -f .pre-commit-config.yaml ]; then
+            uv tool run pre-commit install
+            uv tool run pre-commit run --all-files --show-diff-on-failure
+          else
+            echo "No .pre-commit-config.yaml found, skipping."
+          fi
+
+  # Testing and Quality using tox
+  test-and-quality:
+    name: Test & Quality (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: pre-commit
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/uv.lock
+            **/pyproject.toml
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.python-version }}-
+            uv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev --locked
+
+      - name: Lint via tox (lint env)
+        run: |
+          uv run tox -e lint
+
+      - name: Run tests via tox with coverage
+        env:
+          PYTHONPATH: src
+        run: |
+          TOX_ENV=py$(echo "${{ matrix.python-version }}" | tr -d '.')
+          echo "Running tox env: $TOX_ENV"
+          uv run tox -e "$TOX_ENV" -q
+
+      - name: Upload coverage artifact (XML)
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov (optional)
+        if: matrix.python-version == '3.11' && secrets.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: anselmoo/mcp-architecton
+
+  # Build Python package and store artifacts (guarded)
+  build-python:
+    name: Build Python Package 📦
+    runs-on: ubuntu-latest
+    needs: test-and-quality
+    if: github.event_name != 'pull_request' && vars.ENABLE_PUBLISH == '1'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build and twine tools
+        run: |
+          pip install build twine
+
+      - name: Build distribution packages
+        run: |
+          python -m build
+
+      - name: Check distribution packages
+        run: |
+          python -m twine check dist/*
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  # Build and push Docker images (guarded and conditional on Dockerfile)
+  build-docker:
+    name: Build Docker Image 🐳
+    runs-on: ubuntu-latest
+    needs: test-and-quality
+    if: github.event_name != 'pull_request' && vars.ENABLE_DOCKER == '1' && hashFiles('Dockerfile') != ''
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign for image signing
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sign Docker images with Cosign
+        env:
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          cosign sign --yes ${images}
+
+  # Publish to TestPyPI (guarded)
+  publish-testpypi:
+    name: Publish to TestPyPI 🧪
+    runs-on: ubuntu-latest
+    needs: build-python
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_PUBLISH == '1'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/mcp-architecton
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distribution packages
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          print-hash: true
+
+  # Publish to PyPI on tag (guarded)
+  publish-pypi:
+    name: Publish to PyPI 🚀
+    runs-on: ubuntu-latest
+    needs: build-python
+    if: startsWith(github.ref, 'refs/tags/') && vars.ENABLE_PUBLISH == '1'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mcp-architecton
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distribution packages
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # Create GitHub Release with artifacts (guarded)
+  github-release:
+    name: Create GitHub Release 📋
+    runs-on: ubuntu-latest
+    needs: [publish-pypi, build-docker]
+    if: startsWith(github.ref, 'refs/tags/') && vars.ENABLE_PUBLISH == '1'
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download distribution packages
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Sign artifacts with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.1
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create '${{ steps.version.outputs.tag }}' \
+            --repo '${{ github.repository }}' \
+            --title 'Release ${{ steps.version.outputs.tag }}' \
+            --notes "## MCP Architecton ${{ steps.version.outputs.version }}\n\n### 🚀 What's New\n- Automated release from tag ${{ steps.version.outputs.tag }}\n\n### 📦 Installation\n```bash\n# Install via pip\npip install mcp-architecton==${{ steps.version.outputs.version }}\n\n# Install via uvx\nuvx install mcp-architecton==${{ steps.version.outputs.version }}\n\n# Run with Docker\ndocker run ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}\n```\n\n### 🐳 Docker Images\n- **Multi-arch**: `ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}`\n- **Latest**: `ghcr.io/${{ github.repository }}:latest`\n- **Platforms**: linux/amd64, linux/arm64\n- **Signed**: All images signed with Cosign for security\n\n### 🔐 Security\n- All artifacts signed with Sigstore\n- Docker images signed with Cosign\n- Published using GitHub OIDC trusted publishing"
+
+      - name: Upload signed artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload '${{ steps.version.outputs.tag }}' dist/** \
+            --repo '${{ github.repository }}'

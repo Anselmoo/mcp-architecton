@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, cast
 
@@ -67,32 +66,6 @@ def _files_matching_target(files: list[Path], target_name: str) -> list[Path]:
     return hits
 
 
-def _rope_can_parse(path: Path) -> tuple[bool, str | None]:
-    """Best-effort rope parse to ensure the file is reasonably well-formed.
-
-    Returns (ok, warning). Does not raise.
-    """
-    try:  # pragma: no cover - optional
-        import rope.base.project  # type: ignore  # noqa: I001
-        import rope.base.libutils  # type: ignore  # noqa: I001
-    except Exception as exc:  # pragma: no cover - optional
-        return (False, f"rope not available: {exc}")
-
-    try:
-        proj = rope.base.project.Project(str(path.parent))  # type: ignore[attr-defined]
-        try:
-            # Use string module to avoid on-disk side effects
-            rope.base.libutils.get_string_module(proj, path.read_text())  # type: ignore[attr-defined]
-            return (True, None)
-        finally:
-            try:
-                proj.close()  # type: ignore[attr-defined]
-            except Exception:
-                pass
-    except Exception as exc:
-        return (False, str(exc))
-
-
 def enforce_target_impl(
     *,
     name: str,
@@ -128,77 +101,10 @@ def enforce_target_impl(
         out_path_arg: str | None = None
         if out_dir:
             out_path_arg = str(Path(out_dir) / f.name)
-        # Optional rope sanity prior to introduce
-        rope_ok, rope_warn = _rope_can_parse(f)
-
-        # Optional rope dry-run rename validator (hits scope only)
-        rope_validate_ok: bool | None = None
-        rope_validate_warn: str | None = None
-        if scope == "hits" and os.getenv("ARCHITECTON_ENABLE_ROPE", "1").lower() not in {
-            "0",
-            "false",
-            "no",
-        }:
-            try:  # pragma: no cover - optional integration
-                import ast
-
-                # Rope imports grouped and sorted
-                import rope.base.libutils  # type: ignore
-                import rope.base.project  # type: ignore
-                import rope.refactor.rename  # type: ignore
-
-                text = f.read_text()
-                # find first function/class name and its first occurrence offset
-                target_name: str | None = None
-                try:
-                    tree = ast.parse(text)
-                    for node in ast.walk(tree):
-                        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-                            target_name = node.name
-                            break
-                except Exception:
-                    target_name = None
-                if target_name:
-                    idx = text.find(target_name)
-                    if idx >= 0:
-                        proj = rope.base.project.Project(str(f.parent))  # type: ignore[attr-defined]
-                        try:
-                            resource = proj.get_file(str(f))  # type: ignore[attr-defined]
-                            name_finder = rope.base.libutils.get_name_at(proj, resource, idx)  # type: ignore[attr-defined]
-                            if name_finder:
-                                renamer = rope.refactor.rename.Rename(proj, name_finder)  # type: ignore[attr-defined]
-                                # Propose a harmless preview: append _preview, but do not apply
-                                _changes = renamer.get_changes(f"{target_name}_preview")  # type: ignore[attr-defined]
-                                rope_validate_ok = True
-                            else:
-                                rope_validate_ok = False
-                                rope_validate_warn = "rope could not resolve name at offset"
-                        finally:
-                            try:
-                                proj.close()  # type: ignore[attr-defined]
-                            except Exception:
-                                pass
-            except Exception as exc:
-                rope_validate_ok = False
-                rope_validate_warn = str(exc)
         res = introduce_impl(name=canon, module_path=str(f), dry_run=dry_run, out_path=out_path_arg)
         if "target" not in res:
             res["target"] = str(f)
         res["category"] = category
-        res["rope_ok"] = rope_ok
-        if rope_warn:
-            # Append to warnings list if present
-            try:
-                (res.setdefault("warnings", [])).append(f"rope: {rope_warn}")
-            except Exception:
-                res["warnings"] = [f"rope: {rope_warn}"]
-        if rope_validate_ok is not None:
-            res["rope_preview_ok"] = rope_validate_ok
-        if rope_validate_warn:
-            try:
-                (res.setdefault("warnings", [])).append(f"rope_preview: {rope_validate_warn}")
-            except Exception:
-                res["warnings"] = [f"rope_preview: {rope_validate_warn}"]
         changes.append(res)
 
     return {

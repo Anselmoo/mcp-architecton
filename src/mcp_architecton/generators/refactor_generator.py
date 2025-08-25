@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 import json
 import logging
-import os
 import py_compile
 import tempfile
 from dataclasses import dataclass
@@ -349,27 +348,6 @@ def _validate_parsers(code: str) -> list[str]:
             py_compile.compile(str(tmp), doraise=True)
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"py_compile failed: {exc}")
-
-    # Optional rope parse for symbol table sanity (best-effort, no failure)
-    if os.getenv("ARCHITECTON_ENABLE_ROPE", "1").lower() not in {"0", "false", "no"}:
-        try:
-            import rope.base.project  # type: ignore  # noqa: I001
-            import rope.base.libutils  # type: ignore  # noqa: I001
-
-            with tempfile.TemporaryDirectory() as td:
-                tmp_dir = Path(td)
-                (tmp_dir / "mod.py").write_text(code)
-                proj = rope.base.project.Project(str(tmp_dir))  # type: ignore[attr-defined]
-                try:
-                    res = proj.get_file(str(tmp_dir / "mod.py"))  # type: ignore[attr-defined]
-                    rope.base.libutils.get_string_module(proj, res.read())  # type: ignore[attr-defined]
-                finally:
-                    try:
-                        proj.close()  # type: ignore[attr-defined]
-                    except Exception:
-                        pass
-        except Exception as exc:  # noqa: BLE001
-            warnings.append(f"rope check skipped: {exc}")
 
     return warnings
 

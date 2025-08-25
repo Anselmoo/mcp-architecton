@@ -1,34 +1,170 @@
-# MCP Architecton
+# MCP Architecton for Python 🏛️🐍
 
-An MCP server that analyzes Python code for design patterns and software architecture signals, and can scaffold pattern introductions.
+An MCP server that analyzes Python code for design patterns and architecture signals, proposes prioritized refactors, and can scaffold safe boilerplate intros with guarded headers.
 
-### Boilerplate header (scaffold guardrails)
+## ⚠️ Caution
 
-Generated scaffolds prepend a compact module docstring that enforces safe, minimal-diff integration:
+Disclaimer — Experimental / Early Stage: This project uses third‑party libraries and optional integrations (Radon, Ruff, ast-grep, rope) that evolve quickly. Treat outputs as recommendations and verify against official docs and your tests before production use. Scaffolds are boilerplate helpers, not automatic refactors. Optional features are gated by env/CLI toggles and should be enabled deliberately.
 
-- Steps 1–5: role mapping → interface extraction → implementation → wiring via a small seam → validate and commit minimal diffs
-- Contract: states inputs/outputs invariants (e.g., public inputs unchanged; behavior unchanged)
-- Validation: toolset used to sanity-check edits (ast, parso, libcst, astroid, RedBaron, tree-sitter, py_compile)
-- Complexity: low/medium/high hint using LOC and top-level defs, with cues like Strangler Fig / Branch-by-Abstraction
-- Cross-ref: up to two links for the pattern/architecture and refactoring techniques (from `data/patterns/catalog.json`)
-- Prompt: one-line hint; may come from catalog’s `prompt_hint` when available
+## Table of Contents
 
-Complexity heuristic (approx.):
+- Why Architecton?
+- 📋 Features
+- 🚀 Quick Start
+- 🔧 MCP Client Configuration
+- CLI Flags and Env Toggles
+- Repo Scan Script
+- 🛠️ Available Tools
+- Linked Examples
+- 🧩 Boilerplate Header Guardrails
+- 🧪 Development
+- 📚 Documentation
+- 🤝 Contributing
+- 📝 License
 
-- low: <300 LOC and <15 top-level defs
-- medium: 300–799 LOC or 15–39 defs
-- high: ≥800 LOC or ≥40 defs
+## Why Architecton?
 
-This header is guidance only—the generator emits boilerplate scaffolds, not automatic refactors.
+Architecton focuses on pattern/architecture guidance with actionable prompts and minimal diffs. It unifies detectors, metrics, and ranked enforcement so you can move from “what’s wrong” to “what to do next” quickly.
 
-See also:
+## 📋 Features
 
-- `data/prompt_presets.json` for 5 prompts and 5 CI subrun recipes
-- `docs/prompt_templates.md` for copyable header and CI subrun templates
+- Pattern and architecture detection with tailored advice from a curated catalog
+- Unified proposals: Radon metrics (CC/MI/LOC), Ruff-only rule counts, and ranked enforcement prompts
+- Safe scaffolding: guarded module header with contract, validation gauntlet (ast/parso/libcst/astroid/RedBaron/tree-sitter/py_compile), complexity hint, and cross-refs
+- Optional integrations (gated):
+  - ast-grep-py heuristics (top-level defs, long parameter lists, repeated literals)
+  - rope dry-run rename validator in enforcement (hits scope) and sanity parse
+- FastMCP-based server; minimal tool surface; catalog-driven prompt hints
 
-### Prompt presets CLI
+## 🚀 Quick Start
 
-List presets and print bodies:
+Requires Python 3.10+ and uses uv.
+
+Install (editable):
+
+```shell
+uv sync --dev
+```
+
+Run the server:
+
+```shell
+uv run mcp-architecton
+```
+
+### VS Code Integration (Manual)
+
+Add this to User Settings (JSON) or `.vscode/mcp.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "architecton": {
+        "command": "uvx",
+        "args": ["mcp-architecton"]
+      }
+    }
+  }
+}
+```
+
+## 🔧 MCP Client Configuration
+
+User Settings (JSON) example using `uvx` (same as above). Alternatively, add `.vscode/mcp.json` with the same block to share in a workspace.
+
+## CLI Flags and Env Toggles
+
+Runtime features are gated by environment variables and mirrored flags:
+
+- ARCHITECTON_ENABLE_ASTGREP: enables ast-grep heuristics (default: enabled)
+- ARCHITECTON_ENABLE_ROPE: enables rope checks and dry-run validator (default: enabled)
+
+Flags (equivalent to setting env vars):
+
+```shell
+uv run mcp-architecton --enable-astgrep
+uv run mcp-architecton --disable-astgrep
+uv run mcp-architecton --enable-rope
+uv run mcp-architecton --disable-rope
+```
+
+Fish shell env example:
+
+```fish
+set -x ARCHITECTON_ENABLE_ASTGREP 0
+set -x ARCHITECTON_ENABLE_ROPE 1
+uv run mcp-architecton
+```
+
+## Repo Scan Script
+
+Run a quick indicator summary and ranked suggestions across a repo:
+
+```shell
+uv run python scripts/scan_repo.py --dir .
+```
+
+Toggles also apply here:
+
+```shell
+uv run python scripts/scan_repo.py --enable-astgrep --disable-rope --dir .
+```
+
+## 🛠️ Available Tools
+
+- propose-architecture: unified proposal using detectors, Radon, Ruff, and ranked enforcement prompts
+- propose-patterns: pattern-focused filtering of the unified proposal
+- analyze-metrics: Radon (CC/MI/LOC) and Ruff rule counts (Ruff-only; Vulture removed)
+- thresholded-enforcement: anti-pattern indicators + ranked prompts with reasons
+- analyze-patterns: detect design patterns
+- analyze-architectures: detect architecture styles
+- suggest-refactor-patterns: advice for detected patterns
+- suggest-architecture-refactor: advice for detected architectures
+- introduce-pattern / introduce-architecture: transformation-first; scaffold fallback; return unified diff (supports {dry_run, out_path})
+- analyze-paths: scan files/dirs/globs with optional per-file metrics
+
+### Examples
+
+```shell
+# Unified proposal for file(s)
+uv run mcp-architecton  # call propose_architecture with {"files": ["path/to/file.py"]}
+
+# Metrics + Ruff counts
+uv run mcp-architecton  # call analyze_metrics with {"files": ["src/**/*.py"]}
+
+# Pattern-only proposal
+uv run mcp-architecton  # call propose_patterns with {"files": ["module.py"]}
+
+# Introduce Strategy (dry-run)
+uv run mcp-architecton  # call introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "dry_run": true}
+
+# Refactor-as-new path
+uv run mcp-architecton  # call introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "out_path": "demo/refactored_demo_file_large.py"}
+```
+
+### Linked Examples
+
+- Header scaffold preview: [examples/preview-header.md](examples/preview-header.md)
+- ast-grep indicators: [examples/preview-astgrep.md](examples/preview-astgrep.md)
+- rope preview rename: [examples/preview-rope.md](examples/preview-rope.md)
+
+## 🧩 Boilerplate Header Guardrails
+
+Generated scaffolds prepend a compact module docstring to enforce safe integration:
+
+- Steps 1–5: role mapping → interface extraction → implementation → seam wiring → validate and commit minimal diffs
+- Contract: inputs/outputs invariants (behavior unchanged)
+- Validation: ast, parso, libcst, astroid, RedBaron, tree-sitter, py_compile
+- Complexity: low/medium/high via LOC/top-level defs, with Strangler Fig/Branch-by-Abstraction cues
+- Cross-refs: links for pattern/architecture and refactoring techniques (catalog-driven)
+- Prompt: one-line hint from the catalog when available
+
+This header is guidance only—the generator emits safe boilerplate, not automatic refactors.
+
+### Prompt presets CLI (optional)
+
+If you use the bundled presets tool:
 
 ```shell
 uv run architecton-presets list prompts
@@ -36,118 +172,28 @@ uv run architecton-presets list subruns
 uv run architecton-presets show prompts minimal-seam-integration
 ```
 
-## Quick start
-
-- Requires Python 3.10+
-- Uses `uv` for tooling
-
-### Install (editable)
+## 🧪 Development
 
 ```shell
+# Install
 uv sync --dev
+
+# Lint
+uv run ruff check .
+
+# Test
+uv run -q pytest -q
 ```
 
-### Run the server
+## 📚 Documentation
 
-```shell
-uv run mcp-architecton
-```
+- MCP Specification: https://modelcontextprotocol.io/
+- FastMCP Framework: https://gofastmcp.com/
 
-### Optional toggles: ast-grep and rope
+## 🤝 Contributing
 
-Runtime features are gated by environment variables and mirrored CLI flags:
+Contributions welcome. Please keep changes typed, linted (Ruff), and include tests for behavior changes.
 
-- ARCHITECTON_ENABLE_ASTGREP: enables ast-grep heuristics (top-level defs, long parameter lists, repeated literals). Default: enabled.
-- ARCHITECTON_ENABLE_ROPE: enables rope sanity parse and a dry-run rename preview validator in enforcement (hits scope). Default: enabled.
-
-You can set them via CLI flags when starting the server:
-
-```shell
-# enable/disable ast-grep
-uv run mcp-architecton --enable-astgrep
-uv run mcp-architecton --disable-astgrep
-
-# enable/disable rope
-uv run mcp-architecton --enable-rope
-uv run mcp-architecton --disable-rope
-```
-
-Or with environment variables:
-
-```shell
-set -x ARCHITECTON_ENABLE_ASTGREP 0  # fish shell example
-set -x ARCHITECTON_ENABLE_ROPE 1
-uv run mcp-architecton
-```
-
-### VS Code MCP config (user settings JSON)
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "architecton": {
-        "command": "uvx",
-        "args": ["mcp-architecton"]
-      }
-    }
-  }
-}
-```
-
-Alternatively, add `.vscode/mcp.json`:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "architecton": {
-        "command": "uvx",
-        "args": ["mcp-architecton"]
-      }
-    }
-  }
-}
-```
-
-## Tools
-
-- propose-architecture: unified proposal that runs detectors, Radon metrics, Ruff, and ranked enforcement to suggest top patterns/architectures with tailored prompts
-- propose-patterns: like propose-architecture but filters suggestions to patterns only
-- analyze-metrics: Radon (CC/MI/LOC) plus Ruff rule counts (Ruff only; Vulture removed)
-- thresholded-enforcement: anti-pattern indicators + ranked suggestions with reasons
-- analyze-patterns: detect patterns in code
-- analyze-architectures: detect architecture signals
-- suggest-refactor: propose changes towards canonical implementations (patterns)
-- suggest-architecture-refactor: targeted advice per architecture
-- introduce-pattern: transform-first; falls back to scaffold; returns unified diff. Supports {dry_run, out_path}
-- analyze-paths: scan files/dirs/globs for findings; optional metrics per file
-
-### Examples
-
-```shell
-# Unified proposal for a file or code snippet
-uv run mcp-architecton  # then call tool propose_architecture with {"files": ["path/to/file.py"]}
-
-# Metrics + Ruff counts
-uv run mcp-architecton  # then call tool analyze_metrics with {"files": ["src/**/*.py"]}
-
-# Pattern-only proposal
-uv run mcp-architecton  # then call tool propose_patterns with {"files": ["module.py"]}
-
-# Introduce a Strategy into a file without writing (dry-run)
-uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "dry_run": true}
-
-# Refactor-as-new: write the change to a different path and get the diff
-uv run mcp-architecton  # then call tool introduce_pattern with {"name": "strategy", "module_path": "demo/demo_file_large.py", "out_path": "demo/refactored_demo_file_large.py"}
-```
-
-### Notes
-
-- Ruff-only: Dead-code scanning via Vulture has been removed for speed; we keep Ruff integrated in metrics.
-- Introduce tools apply generic AST-family transforms both before and after scaffolding to normalize imports and future annotations and always return a unified diff.
-- Overlap clarification: propose-architecture gives prioritized, ranked suggestions using indicators and advice; suggest-architecture-refactor is a lighter, direct advice emitter for already detected architectures.
-
-## License
+## 📝 License
 
 MIT

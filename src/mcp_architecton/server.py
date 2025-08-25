@@ -1,9 +1,7 @@
 from __future__ import annotations
 # ruff: noqa: I001
 
-import argparse
 import logging
-import os
 from pathlib import Path
 import sys
 from typing import Any, cast
@@ -27,20 +25,25 @@ from mcp_architecton.services.enforce import (
     enforce_target_impl as svc_enforce_target_impl,
     enforce_ranked_impl as svc_enforce_ranked_impl,
 )
+from mcp_architecton.services.refactors import (
+    list_refactorings_impl as svc_list_refactorings_impl,
+)
 from mcp_architecton.generators.refactor_generator import (
     introduce_pattern_impl,
     introduce_architecture_impl,
 )
 
-# Optional alias map from snippets; keep resilient if package not present
-try:  # pragma: no cover - optional
-    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
-except Exception:  # pragma: no cover
-    _IMPL_ALIASES = {}  # type: ignore[assignment]
-
 # Implementor snippets are optional; keep the server resilient if not present.
 NAME_ALIASES: dict[str, str] = {}
-NAME_ALIASES.update(cast(dict[str, str], _IMPL_ALIASES))
+try:  # pragma: no cover - optional dependency
+    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
+    from mcp_architecton.snippets import get_snippet  # type: ignore
+
+    NAME_ALIASES.update(cast(dict[str, str], _IMPL_ALIASES))
+except Exception:  # pragma: no cover
+
+    def get_snippet(_name: str) -> str | None:  # type: ignore
+        return None
 
 
 logging.basicConfig(level=logging.INFO)
@@ -74,8 +77,8 @@ def _arch_advice() -> dict[str, str]:
     return _architecture_refactor_advice_cache or {}
 
 
-# Name kept to match VS Code MCP config and console script
-app: FastMCP = FastMCP("mcp-architecton")
+# MCP server symbol (used by clients as the server name)
+app: FastMCP = FastMCP("architecton")
 
 
 def _ranked_enforcement_targets(
@@ -486,6 +489,12 @@ def tool_list_patterns() -> list[dict[str, Any]]:
     return list_patterns_impl()
 
 
+@app.tool(name="list-refactorings")
+def tool_list_refactorings() -> list[dict[str, Any]]:
+    """List refactoring techniques with URLs and prompt hints (if available)."""
+    return svc_list_refactorings_impl()
+
+
 @app.tool(name="analyze-patterns")
 def tool_analyze_patterns(
     code: str | None = None, files: list[str] | None = None
@@ -697,42 +706,9 @@ def tool_scan_anti_architectures(
     return {"results": results_out}
 
 
-def _apply_cli_env_toggles(argv: list[str]) -> list[str]:
-    """Parse known CLI flags and set env vars early; return remaining args.
-
-    Flags (optional; defaults unchanged if omitted):
-      --enable-astgrep / --disable-astgrep -> ARCHITECTON_ENABLE_ASTGREP=1/0
-      --enable-rope    / --disable-rope    -> ARCHITECTON_ENABLE_ROPE=1/0
-
-    Unknown args are preserved and returned for FastMCP to consume if needed.
-    """
-    parser = argparse.ArgumentParser(add_help=False)
-    g = parser.add_mutually_exclusive_group()
-    g.add_argument("--enable-astgrep", action="store_true")
-    g.add_argument("--disable-astgrep", action="store_true")
-    h = parser.add_mutually_exclusive_group()
-    h.add_argument("--enable-rope", action="store_true")
-    h.add_argument("--disable-rope", action="store_true")
-    # Parse only known flags, leave the rest
-    known, rest = parser.parse_known_args(argv)
-    if known.enable_astgrep:
-        os.environ["ARCHITECTON_ENABLE_ASTGREP"] = "1"
-    if known.disable_astgrep:
-        os.environ["ARCHITECTON_ENABLE_ASTGREP"] = "0"
-    if known.enable_rope:
-        os.environ["ARCHITECTON_ENABLE_ROPE"] = "1"
-    if known.disable_rope:
-        os.environ["ARCHITECTON_ENABLE_ROPE"] = "0"
-    return rest
-
-
 def main() -> None:
     """Main entry point for the MCP server."""
     try:
-        # Apply CLI env toggles before any optional imports read them
-        remaining = _apply_cli_env_toggles(sys.argv[1:])
-        # Rebuild argv for underlying server if it cares about extras
-        sys.argv = [sys.argv[0], *remaining]
         # Run the FastMCP server
         app.run()
     except KeyboardInterrupt:
