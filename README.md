@@ -2,25 +2,31 @@
 
 An MCP server that analyzes Python code for design patterns and architecture signals, proposes prioritized refactors, and can scaffold safe boilerplate intros with guarded headers.
 
-## ⚠️ Caution
-
-Disclaimer — Experimental / Early Stage: This project uses third‑party libraries and optional integrations (Radon, Ruff, ast-grep, rope) that evolve quickly. Treat outputs as recommendations and verify against official docs and your tests before production use. Scaffolds are boilerplate helpers, not automatic refactors. Optional features are gated by env/CLI toggles and should be enabled deliberately.
+> [!caution]
+>
+> **Disclaimer** — Experimental / Early Stage: This project uses third‑party libraries and optional integrations (Radon, Ruff, ast-grep, rope) that evolve quickly. Treat outputs as recommendations and verify against official docs and your tests before production use. Scaffolds are boilerplate helpers, not automatic refactors. Optional features are gated by env/CLI toggles and should be enabled deliberately.
 
 ## Table of Contents
 
-- Why Architecton?
-- 📋 Features
-- 🚀 Quick Start
-- 🔧 MCP Client Configuration
-- CLI Flags and Env Toggles
-- Repo Scan Script
-- 🛠️ Available Tools
-- Linked Examples
-- 🧩 Boilerplate Header Guardrails
-- 🧪 Development
-- 📚 Documentation
-- 🤝 Contributing
-- 📝 License
+- [MCP Architecton for Python 🏛️🐍](#mcp-architecton-for-python-️)
+  - [Table of Contents](#table-of-contents)
+  - [Why Architecton?](#why-architecton)
+  - [📋 Features](#-features)
+  - [🚀 Quick Start](#-quick-start)
+    - [VS Code Integration (Manual)](#vs-code-integration-manual)
+  - [🔧 MCP Client Configuration](#-mcp-client-configuration)
+  - [CLI Flags and Env Toggles](#cli-flags-and-env-toggles)
+  - [Repo Scan Script](#repo-scan-script)
+  - [🛠️ Available Tools](#️-available-tools)
+    - [Examples](#examples)
+    - [Linked Examples](#linked-examples)
+  - [🧩 Boilerplate Header Guardrails](#-boilerplate-header-guardrails)
+    - [Prompt presets CLI (optional)](#prompt-presets-cli-optional)
+  - [🧪 Development](#-development)
+  - [📚 Documentation](#-documentation)
+    - [Key Pattern \& Architecture References](#key-pattern--architecture-references)
+  - [🤝 Contributing](#-contributing)
+  - [📝 License](#-license)
 
 ## Why Architecton?
 
@@ -190,10 +196,25 @@ uv run -q pytest -q
 - MCP Specification: https://modelcontextprotocol.io/
 - FastMCP Framework: https://gofastmcp.com/
 
+### Key Pattern & Architecture References
+
+- Design Patterns (overview): https://refactoring.guru/design-patterns
+- Python patterns (examples): https://github.com/faif/python-patterns
+- Presentation/Domain/Data layering: https://martinfowler.com/bliki/PresentationDomainDataLayering.html
+- Hexagonal Architecture: https://alistair.cockburn.us/hexagonal-architecture/
+- Clean Architecture: https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html
+- Microservices: https://martinfowler.com/articles/microservices.html
+- Event-Driven Architecture: https://martinfowler.com/articles/201701-event-driven.html
+- CQRS: https://martinfowler.com/bliki/CQRS.html
+
+Full curated catalog used by the server: [data/patterns/catalog.json](data/patterns/catalog.json)
+
 ## 🤝 Contributing
 
 Contributions welcome. Please keep changes typed, linted (Ruff), and include tests for behavior changes.
 
+By contributing, you agree your contributions are licensed under the project’s [MIT License](LICENSE). No Contributor License Agreement (CLA) is required at this time.
+
 ## 📝 License
 
-MIT
+[MIT](LICENSE)

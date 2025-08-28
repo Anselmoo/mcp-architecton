@@ -1,6 +1,6 @@
 {
   "servers": {
-    "mcp-architecton": {
+    "architecton": {
       "type": "stdio",
       "command": "uv",
       "args": ["run", "--directory", "${workspaceFolder}", "mcp-architecton"],

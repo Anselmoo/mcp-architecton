@@ -78,7 +78,7 @@ def _arch_advice() -> dict[str, str]:
 
 
 # MCP server symbol (used by clients as the server name)
-app: FastMCP = FastMCP("architecton")
+app: FastMCP = FastMCP("Architecton")
 
 
 def _ranked_enforcement_targets(
