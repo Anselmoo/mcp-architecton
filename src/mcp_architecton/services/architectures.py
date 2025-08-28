@@ -42,21 +42,30 @@ def analyze_architectures_impl(
     findings: list[dict[str, Any]] = []
 
     def _is_arch(entry: dict[str, Any]) -> bool:
-        name = str(entry.get("name") or entry.get("pattern") or "").lower()
-        return "architecture" in name or name in {
+        name = str(entry.get("name") or entry.get("pattern") or "").strip().lower()
+        if not name:
+            return False
+        if "architecture" in name:
+            return True
+        arch_names = {
             "layered architecture",
             "hexagonal architecture",
             "clean architecture",
             "3-tier architecture",
+            "three-tier architecture",
+            "model-view-controller (mvc)",
+            # helpers considered architectural elements
             "repository",
             "service layer",
             "unit of work",
             "message bus",
             "domain events",
             "cqrs",
-            "model-view-controller (mvc)",
             "front controller",
         }
+        # also accept stripped suffix
+        base = name.replace(" architecture", "").strip()
+        return name in arch_names or base in {n.replace(" architecture", "") for n in arch_names}
 
     def _normalize(entry: dict[str, Any]) -> dict[str, Any]:
         out = dict(entry)

@@ -9,12 +9,7 @@ from mcp_architecton.analysis.enforcement import ranked_enforcement_targets
 from mcp_architecton.detectors import registry as detector_registry
 from mcp_architecton.generators.refactor_generator import introduce_impl
 from mcp_architecton.services.scan import scan_anti_patterns_impl
-
-# Optional alias import (keep resilient)
-try:  # pragma: no cover - optional
-    from mcp_architecton.snippets.aliases import NAME_ALIASES as _impl_aliases_src  # type: ignore
-except Exception:  # pragma: no cover
-    _impl_aliases_src: dict[str, str] = {}
+from mcp_architecton.snippets.aliases import NAME_ALIASES as _impl_aliases_src
 
 
 def _canon(name: str) -> str:
@@ -46,8 +41,13 @@ def _iter_py_files(paths: list[str]) -> list[Path]:
     return uniq
 
 
+def _simplify(s: str) -> str:
+    return "".join(ch for ch in s.lower() if ch.isalnum())
+
+
 def _files_matching_target(files: list[Path], target_name: str) -> list[Path]:
     wanted = (target_name or "").strip().lower()
+    wanted_s = _simplify(wanted)
     hits: list[Path] = []
     for f in files:
         try:
@@ -60,7 +60,11 @@ def _files_matching_target(files: list[Path], target_name: str) -> list[Path]:
             results = []
         for r in results:
             rname = str(r.get("name", "")).strip().lower()
-            if rname == wanted:
+            r_s = _simplify(rname)
+            # Accept direct match, simplified match, or match after stripping common suffixes
+            base_arch = rname.replace(" architecture", "").strip()
+            base_s = _simplify(base_arch)
+            if rname == wanted or r_s == wanted_s or base_s == wanted_s:
                 hits.append(f)
                 break
     return hits
@@ -107,7 +111,7 @@ def enforce_target_impl(
         res["category"] = category
         changes.append(res)
 
-    return {
+    result: dict[str, Any] = {
         "status": "ok",
         "category": category,
         "name": canon,
@@ -116,6 +120,11 @@ def enforce_target_impl(
         "paths": paths,
         "changes": changes,
     }
+    if not changes:
+        result["reason"] = (
+            "no files matched scope or detector hits; try scope='all' or verify target name"
+        )
+    return result
 
 
 def enforce_ranked_impl(

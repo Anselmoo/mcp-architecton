@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-try:  # pragma: no cover - optional dependency
-    from ..snippets.catalog import CatalogEntry  # type: ignore
-except Exception:  # pragma: no cover
-
-    class CatalogEntry:  # type: ignore
-        pass
-
+from ..snippets.catalog import CatalogEntry  # type: ignore
 
 Generator = Callable[[str, Optional[CatalogEntry]], str | None]
 

@@ -91,7 +91,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                         pass
             if targets:
                 proc = subprocess.run(
-                    [ruff_exe, "check", "--format", "json", *targets],
+                    [ruff_exe, "check", "--output-format", "json", *targets],
                     capture_output=True,
                     text=True,
                 )

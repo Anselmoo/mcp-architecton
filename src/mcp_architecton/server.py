@@ -33,25 +33,14 @@ from mcp_architecton.generators.refactor_generator import (
     introduce_architecture_impl,
 )
 
-# Implementor snippets are optional; keep the server resilient if not present.
-NAME_ALIASES: dict[str, str] = {}
-try:  # pragma: no cover - optional dependency
-    from mcp_architecton.snippets import NAME_ALIASES as _IMPL_ALIASES  # type: ignore
-    from mcp_architecton.snippets import get_snippet  # type: ignore
+from mcp_architecton.snippets.aliases import (
+    NAME_ALIASES,
+    canonicalize_name,
+)
 
-    NAME_ALIASES.update(cast(dict[str, str], _IMPL_ALIASES))
-except Exception:  # pragma: no cover
-
-    def get_snippet(_name: str) -> str | None:  # type: ignore
-        return None
-
-
+# Configure logging for the server module
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-_PATTERN_ALIASES: dict[str, str] = NAME_ALIASES
-_ARCH_ALIASES: dict[str, str] = NAME_ALIASES
 
 
 # Lazy caches for dynamically built advice maps
@@ -154,18 +143,12 @@ def _thresholded_enforcement(
 
 def _canonical_pattern_name(name: str | None) -> str:
     """Return a normalized canonical pattern name using alias map when available."""
-    if not name:
-        return ""
-    key = name.strip().lower()
-    return _PATTERN_ALIASES.get(key, key)
+    return canonicalize_name(name)
 
 
 def _canonical_arch_name(name: str | None) -> str:
     """Return a normalized canonical architecture name using alias map when available."""
-    if not name:
-        return ""
-    key = name.strip().lower()
-    return _ARCH_ALIASES.get(key, key)
+    return canonicalize_name(name)
 
 
 def list_patterns_impl() -> list[dict[str, Any]]:
@@ -208,6 +191,11 @@ def suggest_pattern_refactor_impl(code: str) -> dict[str, Any]:
         advice = _pattern_advice().get(canon, None)
         if advice:
             suggestions.append({"pattern": canon, "advice": advice})
+    # If empty, offer a lightweight generic suggestion using advice defaults
+    if not suggestions:
+        # Provide top 3 generic pattern prompts if available
+        pats = list(_pattern_advice().items())[:3]
+        suggestions = [{"pattern": k, "advice": v} for k, v in pats]
     return {"suggestions": suggestions}
 
 
@@ -225,6 +213,9 @@ def suggest_architecture_refactor_impl(code: str) -> dict[str, Any]:
         advice = _arch_advice().get(canon, None)
         if advice:
             suggestions.append({"architecture": canon, "advice": advice})
+    if not suggestions:
+        archs = list(_arch_advice().items())[:3]
+        suggestions = [{"architecture": k, "advice": v} for k, v in archs]
     return {"suggestions": suggestions}
 
 

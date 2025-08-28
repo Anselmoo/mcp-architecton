@@ -19,17 +19,12 @@ from redbaron import RedBaron
 from tree_sitter import Parser
 from tree_sitter_languages import get_language
 
+from mcp_architecton.snippets.aliases import canonicalize_name  # type: ignore
+
 from .architectures import ARCH_GENERATORS
 from .patterns import PATTERN_GENERATORS
 
 logger = logging.getLogger(__name__)
-
-
-# Optional: alias map if snippets package is present
-try:  # pragma: no cover - optional
-    from mcp_architecton.snippets.aliases import NAME_ALIASES as snippet_aliases  # type: ignore
-except Exception:  # pragma: no cover
-    snippet_aliases: dict[str, str] = {}
 
 
 Generator = Callable[[str, Optional[Any]], str | None]
@@ -38,8 +33,7 @@ Generator = Callable[[str, Optional[Any]], str | None]
 def _canon(name: str | None) -> str:
     if not name:
         return ""
-    raw = name.strip().lower()
-    return snippet_aliases.get(raw, raw)
+    return canonicalize_name(name)
 
 
 def _select_generator(name: str) -> tuple[str, str, Generator] | None:
