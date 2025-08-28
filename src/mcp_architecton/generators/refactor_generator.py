@@ -317,7 +317,7 @@ def _validate_parsers(code: str) -> list[str]:
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"astroid.parse failed: {exc}")
 
-    # redbaron
+    # RedBaron
     try:
         RedBaron(code)
     except Exception as exc:  # noqa: BLE001
@@ -326,10 +326,10 @@ def _validate_parsers(code: str) -> list[str]:
     # tree-sitter
     try:
         lang = get_language("python")  # type: ignore[no-untyped-call]
-        parser = Parser()  # type: ignore[call-arg]
+        parser = Parser()  # No arguments - API changed
         parser.set_language(lang)  # type: ignore[attr-defined]
         tree = parser.parse(code.encode("utf-8"))  # type: ignore[attr-defined]
-        if tree.root_node.has_error:
+        if tree.root_node.has_error:  # type: ignore[attr-defined]
             warnings.append("tree-sitter reports syntax errors")
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"tree-sitter failed: {exc}")

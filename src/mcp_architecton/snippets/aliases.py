@@ -12,6 +12,7 @@ ARCHITECTURE_ALIASES: dict[str, str] = {
     "3-tier architecture": "three_tier",
     "three-tier architecture": "three_tier",
     "3 tier": "three_tier",
+    "3-tier": "three_tier",
     "three tier": "three_tier",
     "model-view-controller (mvc)": "mvc",
     "mvc": "mvc",
