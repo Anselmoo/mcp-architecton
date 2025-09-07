@@ -25,15 +25,15 @@ class TestEnforcement(unittest.TestCase):
         """Test basic ranked enforcement functionality."""
         indicators = [
             {"type": "high_cc", "weight": 5},
-            {"type": "large_file", "weight": 3}
+            {"type": "large_file", "weight": 3},
         ]
         recommendations = ["Factory", "Singleton", "Strategy"]
         pattern_advice = {"Factory": "Use factory pattern", "Singleton": "Use singleton"}
         arch_advice = {"Layered": "Use layered architecture"}
         aliases = {"Factory Method": "Factory"}
-        
+
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases
+            indicators, recommendations, pattern_advice, arch_advice, aliases,
         )
         self.assertIsInstance(result, list)
         # Should return list of tuples: (name, category, weight, reasons)
@@ -47,13 +47,13 @@ class TestEnforcement(unittest.TestCase):
         pattern_advice = {
             "Template Method": "Use template method pattern",
             "Strategy": "Use strategy pattern",
-            "Factory": "Use factory pattern"
+            "Factory": "Use factory pattern",
         }
         arch_advice = {}
         aliases = {"Strategy Pattern": "Strategy", "Factory Method": "Factory"}
-        
+
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases
+            indicators, recommendations, pattern_advice, arch_advice, aliases,
         )
         self.assertIsInstance(result, list)
         # Results should be sorted by weight (descending)
@@ -68,12 +68,12 @@ class TestEnforcement(unittest.TestCase):
         arch_advice = {
             "Layered": "Use layered architecture",
             "Hexagonal": "Use hexagonal architecture",
-            "Clean": "Use clean architecture"
+            "Clean": "Use clean architecture",
         }
         aliases = {"Layered Architecture": "Layered", "Clean Architecture": "Clean"}
-        
+
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases
+            indicators, recommendations, pattern_advice, arch_advice, aliases,
         )
         self.assertIsInstance(result, list)
 
@@ -81,15 +81,15 @@ class TestEnforcement(unittest.TestCase):
         """Test enforcement with mixed pattern and architecture recommendations."""
         indicators = [
             {"type": "complexity", "weight": 7},
-            {"type": "coupling", "weight": 4}
+            {"type": "coupling", "weight": 4},
         ]
         recommendations = ["Factory", "Strategy", "Layered Architecture", "CQRS"]
         pattern_advice = {"Factory": "Factory advice", "Strategy": "Strategy advice"}
         arch_advice = {"Layered": "Layered advice", "CQRS": "CQRS advice"}
         aliases = {"Layered Architecture": "Layered"}
-        
+
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases
+            indicators, recommendations, pattern_advice, arch_advice, aliases,
         )
         self.assertIsInstance(result, list)
 

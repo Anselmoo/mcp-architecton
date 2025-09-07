@@ -93,7 +93,7 @@ exclude_lines = [
     'raise NotImplementedError',
     'if TYPE_CHECKING:',
 ]
-fail_under = 60  # Gradually increase from 35 to target 65
+fail_under = 65  # Target achieved: comprehensive test coverage
 precision = 1
 
 [tool.hatch.build.targets.wheel]

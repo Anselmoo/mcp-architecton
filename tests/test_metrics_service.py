@@ -1,7 +1,7 @@
 """Tests for metrics service module."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from mcp_architecton.services.metrics import analyze_metrics_impl
 
@@ -60,7 +60,7 @@ def complex_function(x):
         self.assertIn("results", result)
         self.assertIn("ruff", result)
 
-    @patch('mcp_architecton.services.metrics.shutil.which')
+    @patch("mcp_architecton.services.metrics.shutil.which")
     def test_analyze_metrics_no_ruff(self, mock_which: MagicMock) -> None:
         """Test behavior when ruff is not available."""
         mock_which.return_value = None
