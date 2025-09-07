@@ -88,7 +88,8 @@ def _thresholded_enforcement(
     files: list[str] | None = None,
     max_suggestions: int = 3,
 ) -> dict[str, Any]:
-    """Call anti-pattern scanner, rank issues, and return tailored enforcement prompts.
+    """
+    Call anti-pattern scanner, rank issues, and return tailored enforcement prompts.
 
     Returns per source: metrics snapshot, top suggestions with prompts and reasons.
     """
@@ -232,7 +233,8 @@ def scan_anti_patterns_impl(
 
 
 def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[str, Any]:
-    """Analyze one or more paths (files/dirs/globs) for patterns/architectures.
+    """
+    Analyze one or more paths (files/dirs/globs) for patterns/architectures.
 
     - paths: file paths, directory paths, or glob patterns
     - include_metrics: if True, include radon metrics per file
@@ -330,7 +332,8 @@ def propose_architecture_impl(
     files: list[str] | None = None,
     max_suggestions: int = 5,
 ) -> dict[str, Any]:
-    """Produce a unified architecture and pattern proposal.
+    """
+    Produce a unified architecture and pattern proposal.
 
     Runs pattern/architecture detectors, Radon metrics, Ruff, and
     enforcement ranking to generate prioritized suggestions with prompts.
@@ -446,7 +449,8 @@ def propose_patterns_impl(
     files: list[str] | None = None,
     max_suggestions: int = 5,
 ) -> dict[str, Any]:
-    """Produce a unified pattern-focused proposal.
+    """
+    Produce a unified pattern-focused proposal.
 
     Reuses propose_architecture and filters suggestions to Patterns only.
     """
@@ -534,7 +538,8 @@ def tool_introduce_pattern(
     dry_run: bool = False,
     out_path: str | None = None,
 ) -> dict[str, Any]:
-    """Create/append a scaffold for the named pattern into module_path.
+    """
+    Create/append a scaffold for the named pattern into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file (e.g., refactor-as-new).
     """
@@ -553,7 +558,8 @@ def tool_introduce_architecture(
     dry_run: bool = False,
     out_path: str | None = None,
 ) -> dict[str, Any]:
-    """Create/append a scaffold for the named architecture helper into module_path.
+    """
+    Create/append a scaffold for the named architecture helper into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file.
     """

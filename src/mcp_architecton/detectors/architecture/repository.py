@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Repository pattern.
+    """
+    Detect Repository pattern.
 
     Heuristics:
     - Class name includes 'Repository' or endswith 'Repo'.

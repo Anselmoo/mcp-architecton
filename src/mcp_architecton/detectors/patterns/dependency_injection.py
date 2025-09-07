@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Dependency Injection.
+    """
+    Detect Dependency Injection.
 
     Heuristics:
     - Class __init__ takes one or more non-self parameters.

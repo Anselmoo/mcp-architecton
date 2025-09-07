@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import ast
+import contextlib
 from typing import Any
 
-import astroid  # type: ignore
+import astroid  # type: ignore[import-untyped]
 
 
 def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dict[str, Any]]:
@@ -15,10 +16,8 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
 
     # Best-effort: parse using astroid for richer inference; detectors still receive stdlib AST
     # Warm astroid to ensure consistent behavior (ignore errors)
-    try:  # pragma: no cover - optional
+    with contextlib.suppress(Exception):  # pragma: no cover - optional
         astroid.parse(source)  # type: ignore[attr-defined]
-    except Exception:
-        pass
 
     findings: list[dict[str, Any]] = []
     for name, detector in registry.items():
@@ -39,7 +38,8 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
 
 # Optional utilities for callers that want richer context
 def astroid_summary(source: str) -> dict[str, Any]:
-    """Return a light summary using astroid when available (names, functions).
+    """
+    Return a light summary using astroid when available (names, functions).
 
     Purely optional helper. Does not affect detectors.
     """
@@ -49,13 +49,14 @@ def astroid_summary(source: str) -> dict[str, Any]:
             body: list[Any] = list(mod.body)  # type: ignore[attr-defined]
         except Exception:
             body = []
-        names = sorted([str(getattr(n, "name", "")) for n in body if hasattr(n, "name")])
-        funcs = [
-            str(getattr(n, "name", ""))
-            for n in body
-            if n.__class__.__name__ in {"FunctionDef", "AsyncFunctionDef"}
-        ]
-        return {"names": names, "functions": funcs}
+        else:
+            names = sorted([str(getattr(n, "name", "")) for n in body if hasattr(n, "name")])
+            funcs = [
+                str(getattr(n, "name", ""))
+                for n in body
+                if n.__class__.__name__ in {"FunctionDef", "AsyncFunctionDef"}
+            ]
+            return {"names": names, "functions": funcs}
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 

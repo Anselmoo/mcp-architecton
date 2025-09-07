@@ -6,7 +6,8 @@ from typing import Any
 
 @dataclass
 class CatalogEntry:
-    """Lightweight catalog entry type used by generators for hints.
+    """
+    Lightweight catalog entry type used by generators for hints.
 
     This mirrors the shape found in data/patterns/catalog.json but is intentionally
     minimal and optional. Generators tolerate None for any field.

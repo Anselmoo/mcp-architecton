@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Unit of Work pattern.
+    """
+    Detect Unit of Work pattern.
 
     Heuristics:
     - Class named UnitOfWork or endswith Uow provides context manager methods

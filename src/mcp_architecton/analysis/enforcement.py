@@ -1,4 +1,5 @@
-"""Enforcement ranking logic (indicators -> prioritized targets).
+"""
+Enforcement ranking logic (indicators -> prioritized targets).
 
 Moves ranking out of server and uses shared aliases. Includes all advice entries
 with baseline weights in addition to curated boosts.
@@ -18,7 +19,8 @@ def _simplify(s: str) -> str:
 
 
 def _tokenize_lower(text: str) -> str:
-    """Best-effort lowercase text normalization with optional tree-sitter tokenization.
+    """
+    Best-effort lowercase text normalization with optional tree-sitter tokenization.
 
     Falls back to plain lowercasing; returns a space-separated token string.
     """
@@ -86,7 +88,8 @@ def ranked_enforcement_targets(
     arch_advice: dict[str, str],
     name_aliases: dict[str, str],
 ) -> list[tuple[str, str, int, list[str]]]:
-    """Return list of (name, category, weight, reasons) sorted by weight.
+    """
+    Return list of (name, category, weight, reasons) sorted by weight.
 
     - name: canonical item name (pattern or architecture)
     - category: "Pattern" or "Architecture"

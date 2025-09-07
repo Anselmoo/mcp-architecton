@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Catalog: general dispatcher calling specialized methods.
+    """
+    Detect Catalog: general dispatcher calling specialized methods.
 
     Heuristics:
     - A class method or function builds a dict mapping keys to callables and dispatches via it

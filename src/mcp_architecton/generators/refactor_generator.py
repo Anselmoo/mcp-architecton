@@ -57,7 +57,8 @@ def _render_template(snippet: str, context: dict[str, Any]) -> str:
 
 
 def _load_catalog_entry(name: str, category: str) -> dict[str, Any] | None:
-    """Best-effort loader for catalog.json entries.
+    """
+    Best-effort loader for catalog.json entries.
 
     Matches by case-insensitive name; returns dict with optional refs/description.
     Works in editable installs by resolving the repo root relative to this file.
@@ -183,7 +184,8 @@ def _build_boilerplate_header(
     extra_refactor_refs: list[str] | None = None,
     prompt_hint: str | None = None,
 ) -> str:
-    """Compact guidance header enforcing stepwise integration and guardrails.
+    """
+    Compact guidance header enforcing stepwise integration and guardrails.
 
     Output is a short module docstring (< ~12 lines) with steps, optional
     Contract (inputs/outputs), and cross-references.
@@ -268,7 +270,8 @@ def _top_level_defs(code: str) -> set[str]:
 
 
 def _astgrep_has_name(code: str, name: str) -> bool:
-    """Heuristic presence check using ast-grep's Python API (SgRoot).
+    """
+    Heuristic presence check using ast-grep's Python API (SgRoot).
 
     Matches top-level function_definition or class_definition whose 'name' field equals `name`.
     Avoids language-agnostic brace patterns and relies on node kinds/fields.
@@ -399,7 +402,8 @@ def introduce_impl(
     dry_run: bool = False,
     out_path: str | None = None,
 ) -> dict[str, Any]:
-    """Generic introduce helper used by services.enforce and tools.
+    """
+    Generic introduce helper used by services.enforce and tools.
 
     Selects the generator by name (pattern or architecture), composes code, validates,
     and appends or creates the module.

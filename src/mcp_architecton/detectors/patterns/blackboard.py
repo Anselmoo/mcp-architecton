@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Blackboard pattern (very heuristic).
+    """
+    Detect Blackboard pattern (very heuristic).
 
     Signals:
     - A central blackboard dict or class attribute collecting facts/solutions

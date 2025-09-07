@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Publish-Subscribe pattern.
+    """
+    Detect Publish-Subscribe pattern.
 
     Heuristics: class or module with subscribe/unsubscribe and publish/emit that iterates listeners.
     """

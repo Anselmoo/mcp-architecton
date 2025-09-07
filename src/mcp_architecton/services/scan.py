@@ -14,7 +14,8 @@ def scan_anti_patterns_impl(
     code: str | None = None,
     files: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Scan for anti-pattern indicators and map to pattern/architecture recommendations.
+    """
+    Scan for anti-pattern indicators and map to pattern/architecture recommendations.
 
     Returns per-source: metrics (CC/MI/LOC), indicators, and suggested patterns/architectures.
     """

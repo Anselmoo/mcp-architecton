@@ -9,7 +9,8 @@ from mcp_architecton.detectors import registry as detector_registry
 
 
 def list_patterns_impl() -> list[dict[str, Any]]:
-    """List design patterns (non-architecture) from catalog if present.
+    """
+    List design patterns (non-architecture) from catalog if present.
 
     Returns empty list on any error.
     """
@@ -39,7 +40,8 @@ def analyze_patterns_impl(
     code: str | None = None,
     files: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Detect design patterns in a code string or Python files (provide code or files).
+    """
+    Detect design patterns in a code string or Python files (provide code or files).
 
     Returns: {"findings": [...]} with 'source' on each finding. If neither input is provided,
     returns {"error": "Provide 'code' or 'files'"}.

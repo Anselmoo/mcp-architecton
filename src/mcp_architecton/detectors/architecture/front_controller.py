@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Front Controller.
+    """
+    Detect Front Controller.
 
     Signals:
     - A class or module-level router mapping (dict of route->handler).

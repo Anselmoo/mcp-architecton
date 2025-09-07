@@ -1,10 +1,9 @@
 # MCP Architecton for Python 🏛️🐍
 
-An MCP server that analyzes Python code for design patterns and architecture signals, proposes prioritized refactors, and can scaffold safe boilerplate intros with guarded headers.
+> [!CAUTION]
+> **Disclaimer — Experimental / Early Stage:** This project is a very early implementation that uses third‑party libraries and optional integrations (Radon, Ruff, ast-grep, rope) that evolve quickly. Treat outputs as recommendations and verify against official docs and your tests before production use. Scaffolds are boilerplate helpers, not automatic refactors. Optional features are gated by env/CLI toggles and should be enabled deliberately.
 
-> [!caution]
->
-> **Disclaimer** — Experimental / Early Stage: This project uses third‑party libraries and optional integrations (Radon, Ruff, ast-grep, rope) that evolve quickly. Treat outputs as recommendations and verify against official docs and your tests before production use. Scaffolds are boilerplate helpers, not automatic refactors. Optional features are gated by env/CLI toggles and should be enabled deliberately.
+An MCP server that analyzes Python code for design patterns and architecture signals, proposes prioritized refactors, and can scaffold safe boilerplate intros with guarded headers.
 
 ## Table of Contents
 

@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Domain Events pattern.
+    """
+    Detect Domain Events pattern.
 
     Heuristics:
     - Event classes ending with 'Event' or dataclasses decorated with @dataclass

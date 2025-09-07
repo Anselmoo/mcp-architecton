@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Flyweight: module-level cache reused in a factory function.
+    """
+    Detect Flyweight: module-level cache reused in a factory function.
 
     Heuristic: find a module-level dict and a function that checks membership
     and returns cached values or creates & stores new ones.

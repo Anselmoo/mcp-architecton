@@ -6,7 +6,8 @@ from typing import Any, cast
 
 
 def list_refactorings_impl() -> list[dict[str, Any]]:
-    """List refactoring techniques from the catalog, if present.
+    """
+    List refactoring techniques from the catalog, if present.
 
     Returns empty list on any error. Each item may include name, url, and prompt_hint.
     """

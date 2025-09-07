@@ -38,7 +38,7 @@ def _category_for_name(name: str) -> str:
     return "Architecture" if name in arch_markers else "Pattern"
 
 
-def _load_module_for_detector(name: str, detector: Any):
+def _load_module_for_detector(name: str, detector: Any) -> Any:
     # Try to resolve the module the detector function comes from
     mod = inspect.getmodule(detector)
     if mod is not None:
@@ -59,7 +59,8 @@ def _load_module_for_detector(name: str, detector: Any):
 
 
 def _extract_advice_from_doc(doc: str | None) -> str | None:
-    """Return a concise advice line from a docstring, if possible.
+    """
+    Return a concise advice line from a docstring, if possible.
 
     Uses the first non-empty line or first sentence, trimmed.
     """
@@ -79,7 +80,8 @@ def _extract_advice_from_doc(doc: str | None) -> str | None:
 
 
 def build_advice_maps() -> tuple[dict[str, str], dict[str, str]]:
-    """Build pattern and architecture advice maps dynamically.
+    """
+    Build pattern and architecture advice maps dynamically.
 
     Priority per name:
     1. Detector module attribute ADVICE (string) if present.

@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Decorator: a wrapper class delegating to a contained component.
+    """
+    Detect Decorator: a wrapper class delegating to a contained component.
 
     Heuristic: class with __init__(..., component) saving to self.<attr> and a
     method that calls self.<attr>.<method>(...).

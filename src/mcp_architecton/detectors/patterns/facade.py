@@ -5,7 +5,8 @@ from typing import Any
 
 
 def _calls_multiple_constructors_or_functions(node: ast.AST, source: str) -> bool:
-    """Return True if body constructs/calls 2+ distinct names or functions.
+    """
+    Return True if body constructs/calls 2+ distinct names or functions.
 
     Very lightweight: count distinct Name() constructor calls and function calls.
     """
@@ -21,7 +22,8 @@ def _calls_multiple_constructors_or_functions(node: ast.AST, source: str) -> boo
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Facade: a simplified interface orchestrating multiple subsystems.
+    """
+    Detect Facade: a simplified interface orchestrating multiple subsystems.
 
     Heuristics:
     - Class with a public method calling 2+ distinct functions/constructors.

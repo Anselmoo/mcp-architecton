@@ -79,7 +79,8 @@ def enforce_target_impl(
     out_dir: str | None = None,
     max_files: int | None = None,
 ) -> dict[str, Any]:
-    """Enforce a specific pattern/architecture across given paths.
+    """
+    Enforce a specific pattern/architecture across given paths.
 
     - Normalizes the name with aliases
     - Scopes to detector hits by default

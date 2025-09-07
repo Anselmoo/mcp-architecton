@@ -9,7 +9,8 @@ from mcp_architecton.detectors import registry as detector_registry
 
 
 def list_architectures_impl() -> list[dict[str, Any]]:
-    """List recognized architectures from catalog if present.
+    """
+    List recognized architectures from catalog if present.
 
     Returns empty list on any error.
     """

@@ -1,4 +1,5 @@
-"""Generators package: pattern and architecture snippet generators.
+"""
+Generators package: pattern and architecture snippet generators.
 
 Exports:
 - Generator: callable signature for generators

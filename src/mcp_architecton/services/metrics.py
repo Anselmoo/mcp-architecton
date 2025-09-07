@@ -9,7 +9,8 @@ from typing import Any, cast
 
 
 def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None) -> dict[str, Any]:
-    """Compute code metrics (CC/MI/LOC) using radon and include Ruff results.
+    """
+    Compute code metrics (CC/MI/LOC) using radon and include Ruff results.
 
     Accepts either a code string or a list of file paths.
     Returns a dict with per-source metrics and linter analyses.

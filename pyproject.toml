@@ -46,19 +46,21 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-# Temporarily enable ALL Ruff rule families. A baseline ignore list will be generated
-# and iteratively reduced. (Generated automatically.)
+# Enable ALL Ruff rule families with strategic ignores for cleaner implementation
 select = ["ALL"]
 ignore = [
-    "E501", # line length
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107", # missing docstrings
+    "E501",   # line length (handled by formatter)
+    "D100",   # missing module docstring
+    "D101",   # missing class docstring
+    "D102",   # missing method docstring
+    "D103",   # missing function docstring  
+    "D104",   # missing package docstring
+    "D105",   # missing magic method docstring
+    "D106",   # missing nested class docstring
+    "D107",   # missing __init__ docstring
+    "D203",   # blank line before class (conflicts with D211)
+    "D212",   # multi-line summary first line (conflicts with D213)
+    "ANN401", # allow Any type annotations where needed
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -88,8 +90,10 @@ exclude_lines = [
     "if __name__ == \"__main__\":",
     'def __repr__\(\):',
     'def __str__\(\):',
+    'raise NotImplementedError',
+    'if TYPE_CHECKING:',
 ]
-fail_under = 35
+fail_under = 50  # Gradually increase from 35 to target 65
 precision = 1
 
 [tool.hatch.build.targets.wheel]
@@ -102,4 +106,29 @@ dev = [
     "tox>=4.28.4",
     "tox-uv>=1.28.0",
     "pre-commit>=3.8.0",
+    "mypy>=1.8.0",
+    "types-requests",
 ]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Gradually enable
+check_untyped_defs = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "astroid.*",
+    "parso.*",
+    "redbaron.*",
+    "tree_sitter.*",
+    "radon.*",
+    "fastmcp.*",
+    "ast_grep_py.*",
+]
+ignore_missing_imports = true

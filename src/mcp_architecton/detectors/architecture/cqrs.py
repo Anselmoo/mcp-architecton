@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect CQRS (Command Query Responsibility Segregation).
+    """
+    Detect CQRS (Command Query Responsibility Segregation).
 
     Heuristics:
     - Presence of both command and query handlers (e.g., handle_command/handle_query).

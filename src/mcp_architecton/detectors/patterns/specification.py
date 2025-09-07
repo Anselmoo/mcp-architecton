@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Specification pattern signals.
+    """
+    Detect Specification pattern signals.
 
     Heuristics: classes with is_satisfied_by and boolean combinators (__and__/__or__/__invert__).
     """

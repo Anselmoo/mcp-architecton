@@ -17,7 +17,8 @@ ROLE_NAMES = {"Service", "Repository", "Controller"}
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect classic Layered Architecture signals.
+    """
+    Detect classic Layered Architecture signals.
 
     Signals:
     - Mentions of common layer module/attribute names.

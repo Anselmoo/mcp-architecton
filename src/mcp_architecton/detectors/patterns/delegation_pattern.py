@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Delegation Pattern.
+    """
+    Detect Delegation Pattern.
 
     Heuristics:
     - Methods forwarding to an attribute: self.<delegate>.<method>(...)

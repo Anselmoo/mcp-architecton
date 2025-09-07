@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Hierarchical State Machine (HSM) (heuristic).
+    """
+    Detect Hierarchical State Machine (HSM) (heuristic).
 
     Signals:
     - Presence of a State base class and nested substates

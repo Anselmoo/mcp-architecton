@@ -7,7 +7,8 @@ from libcst.codemod.visitors import AddImportsVisitor
 
 
 class _AddTypeHints(cst.CSTTransformer):
-    """Annotate untyped function params and returns with `Any`.
+    """
+    Annotate untyped function params and returns with `Any`.
 
     - Skips parameters named `self` or `cls`.
     - Sets `changed` when any change is made so callers can detect idempotence.
@@ -35,7 +36,8 @@ class _AddTypeHints(cst.CSTTransformer):
 
 
 def add_type_hints_to_code(source: str) -> tuple[bool, str]:
-    """Return (changed, code) with Any annotations added where missing.
+    """
+    Return (changed, code) with Any annotations added where missing.
 
     Preserves formatting and comments. Adds `from typing import Any` when changes occur.
     """

@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Message Bus pattern.
+    """
+    Detect Message Bus pattern.
 
     Heuristics:
     - A dict of handlers keyed by event/command types

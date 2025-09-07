@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Service Layer pattern.
+    """
+    Detect Service Layer pattern.
 
     Heuristics:
     - Module-level function or class method that accepts a `uow` (unit of work) argument

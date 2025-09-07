@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Factory Method: function selecting and returning different classes.
+    """
+    Detect Factory Method: function selecting and returning different classes.
 
     Heuristic: top-level function with if/elif branching that returns instances
     of different classes.

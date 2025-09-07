@@ -8,7 +8,8 @@ DOMAIN_TERMS = {"entity", "entities", "value_object", "aggregate"}
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Clean Architecture hints.
+    """
+    Detect Clean Architecture hints.
 
     Signals:
     - Presence of use_case/interactor modules/functions/classes.

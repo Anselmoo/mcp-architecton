@@ -5,7 +5,8 @@ from typing import Any
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Detect Graph Search (heuristic and broad).
+    """
+    Detect Graph Search (heuristic and broad).
 
     Signals:
     - Functions named bfs/dfs/dijkstra/a_star or similar

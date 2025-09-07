@@ -8,7 +8,8 @@ ADAPTER_HINTS = {"Adapter", "Repository", "Gateway"}
 
 
 def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
-    """Heuristic Hexagonal Architecture detector.
+    """
+    Heuristic Hexagonal Architecture detector.
 
     Signals:
     - Presence of typing.Protocol or abc.ABC ports (interfaces) used as type hints or bases.
