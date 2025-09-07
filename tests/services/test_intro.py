@@ -8,7 +8,7 @@ import unittest
 class TestIntroServiceBasic(unittest.TestCase):
     """Basic tests for intro service that avoid circular imports."""
 
-    def test_intro_service_import(self):
+    def test_intro_service_import(self) -> None:
         """Test that the intro service can be imported without errors."""
         try:
             from mcp_architecton.services import intro
@@ -18,7 +18,7 @@ class TestIntroServiceBasic(unittest.TestCase):
             # If there's a circular import, this test will document it
             self.fail(f"Circular import or missing dependency: {e}")
 
-    def test_canonical_pattern_name_function_exists(self):
+    def test_canonical_pattern_name_function_exists(self) -> None:
         """Test that the canonical pattern name function exists and is callable."""
         try:
             from mcp_architecton.services.intro import _canonical_pattern_name
@@ -34,7 +34,7 @@ class TestIntroServiceBasic(unittest.TestCase):
             # Skip test if there are dependency issues
             self.skipTest("Cannot import intro module due to dependencies")
 
-    def test_diff_function_exists(self):
+    def test_diff_function_exists(self) -> None:
         """Test that the diff function exists and works."""
         try:
             from mcp_architecton.services.intro import _diff

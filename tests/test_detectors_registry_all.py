@@ -33,11 +33,11 @@ def command_handler(cmd):
 def test_all_detectors_invoke() -> None:
     tree = ast.parse(_SAMPLE)
     total = 0
-    for name, detector in registry.items():
+    for detector in registry.values():  # Use .values() instead of .items()
         try:
             detector(tree, _SAMPLE)  # execution for coverage; result not asserted
             total += 1
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001, S112, PERF203
             # Detectors are heuristic; ignore failures in smoke test
             continue
     assert total == len(registry)
