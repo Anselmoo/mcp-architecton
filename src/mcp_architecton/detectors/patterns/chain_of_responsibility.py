@@ -28,6 +28,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Chain of Responsibility",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} links handlers and delegates to next",
-                }
+                },
             )
     return results

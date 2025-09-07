@@ -26,7 +26,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Message Bus",
                 "confidence": 0.45,
                 "reason": "Handlers map with publish/dispatch entrypoint",
-            }
+            },
         )
 
     return findings

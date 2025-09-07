@@ -49,7 +49,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "Roles present "
                     f"{sorted(set(roles.values()))}, controller wiring={controller_wires}"
                 ),
-            }
+            },
         )
 
     return findings

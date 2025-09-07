@@ -58,7 +58,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "CQRS",
                 "confidence": min(confidence, 0.7),
                 "reason": "Detected command and query handlers separation",
-            }
+            },
         )
 
     return findings

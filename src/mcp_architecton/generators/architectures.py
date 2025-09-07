@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from ..snippets.catalog import CatalogEntry  # type: ignore
 
-Generator = Callable[[str, Optional[CatalogEntry]], str | None]
+Generator = Callable[[str, CatalogEntry | None], str | None]
 
 
-def gen_mvc(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_mvc(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Model:
@@ -29,7 +29,7 @@ class Controller:
     ).strip()
 
 
-def gen_hexagonal(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_hexagonal(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Port:
@@ -48,7 +48,7 @@ class ApplicationService:
     ).strip()
 
 
-def gen_layered(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_layered(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class PresentationLayer: ...
@@ -59,7 +59,7 @@ class InfrastructureLayer: ...
     ).strip()
 
 
-def gen_clean(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_clean(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Entities: ...
@@ -70,7 +70,7 @@ class FrameworksDrivers: ...
     ).strip()
 
 
-def gen_three_tier(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_three_tier(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class PresentationTier: ...
@@ -80,7 +80,7 @@ class DataTier: ...
     ).strip()
 
 
-def gen_repository(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_repository(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from __future__ import annotations
@@ -114,7 +114,7 @@ class InMemoryRepository(Repository[T]):
     ).strip()
 
 
-def gen_uow(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_uow(_: str, __: CatalogEntry | None) -> str | None:
     return (
         '''
 class UnitOfWork:
@@ -134,7 +134,7 @@ class UnitOfWork:
     ).strip()
 
 
-def gen_service_layer(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_service_layer(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class ServiceLayer:
@@ -153,7 +153,7 @@ class ServiceLayer:
     ).strip()
 
 
-def gen_message_bus(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_message_bus(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from collections import defaultdict
@@ -174,7 +174,7 @@ class MessageBus:
     ).strip()
 
 
-def gen_domain_events(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_domain_events(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 from dataclasses import dataclass
@@ -200,7 +200,7 @@ class EventDispatcher:
     ).strip()
 
 
-def gen_cqrs(_: str, __: Optional[CatalogEntry]) -> str | None:
+def gen_cqrs(_: str, __: CatalogEntry | None) -> str | None:
     return (
         """
 class Command:  # pragma: no cover - scaffold

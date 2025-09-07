@@ -24,7 +24,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Domain Events",
                 "confidence": 0.45,
                 "reason": "Event classes with emit/publish or aggregate events list",
-            }
+            },
         )
 
     return findings

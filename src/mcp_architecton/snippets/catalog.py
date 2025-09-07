@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -15,9 +15,9 @@ class CatalogEntry:
     name: str | None = None
     category: str | None = None
     description: str | None = None
-    refs: Optional[List[str]] = None
+    refs: list[str] | None = None
     prompt_hint: str | None = None
-    contract: Optional[Dict[str, Any]] = None
+    contract: dict[str, Any] | None = None
 
 
 __all__ = ["CatalogEntry"]

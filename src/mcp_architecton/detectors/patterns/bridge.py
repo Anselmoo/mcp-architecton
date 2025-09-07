@@ -34,6 +34,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Bridge",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} delegates to implementor via self.{impl_attr}",
-                }
+                },
             )
     return results

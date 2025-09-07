@@ -26,6 +26,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Factory Method",
                         "confidence": 0.6,
                         "reason": f"Function {node.name} returns multiple concrete types",
-                    }
+                    },
                 )
     return results

@@ -25,7 +25,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Template Method",
                             "confidence": 0.6,
                             "reason": f"Class {cls.name}.{m.name} orchestrates multiple self.* calls",
-                        }
+                        },
                     )
                     break
     return results

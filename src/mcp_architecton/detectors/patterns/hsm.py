@@ -24,7 +24,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Hierarchical State Machine (HSM)",
                 "confidence": 0.35,
                 "reason": "State base with enter/exit and parent/child references",
-            }
+            },
         )
 
     return findings

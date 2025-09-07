@@ -22,6 +22,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Singleton",
                     "confidence": 0.7,
                     "reason": f"Class {cls.name} defines instance holder and __new__",
-                }
+                },
             )
     return results

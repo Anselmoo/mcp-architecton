@@ -22,6 +22,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Factory",
                         "confidence": 0.6,
                         "reason": f"Function {node.name} returns instances of module classes",
-                    }
+                    },
                 )
     return findings

@@ -56,7 +56,7 @@ def _tokenize_lower(text: str) -> str:
 
 
 def _canonical_from_text(
-    token_text: str, advice_keys: list[str], aliases: dict[str, str]
+    token_text: str, advice_keys: list[str], aliases: dict[str, str],
 ) -> set[str]:
     """Find advice keys referenced in free-form text using direct and alias-based matching."""
     text = token_text.lower()
@@ -66,7 +66,7 @@ def _canonical_from_text(
         if k.lower() in text:
             hits.add(k)
     # alias contains
-    for alias_key in aliases.keys():
+    for alias_key in aliases:
         if alias_key in text:
             # try to map alias to the closest advice key
             alias_val = aliases[alias_key]
@@ -164,7 +164,7 @@ def ranked_enforcement_targets(
 
     # Ensure every advice entry is present at least with baseline weight 1 for each indicator type
     all_keys = list(pattern_advice.keys()) + list(arch_advice.keys())
-    for itype in sev.keys():
+    for itype in sev:
         entries = indicator_targets.setdefault(itype, [])
         present = {name for name, _ in entries}
         for k in all_keys:
@@ -172,7 +172,7 @@ def ranked_enforcement_targets(
                 entries.append((k, 1))
 
     def add_target(
-        name: str, reasons: list[str], w: int, acc: dict[str, tuple[str, int, set[str]]]
+        name: str, reasons: list[str], w: int, acc: dict[str, tuple[str, int, set[str]]],
     ) -> None:
         cat = "Pattern" if name in pattern_advice else "Architecture"
         if name not in acc:

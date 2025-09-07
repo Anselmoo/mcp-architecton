@@ -20,6 +20,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Chaining Method",
                     "confidence": 0.65,
                     "reason": f"Class {cls.name} has {returns_self} methods returning self",
-                }
+                },
             )
     return findings

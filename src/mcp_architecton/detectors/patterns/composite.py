@@ -53,6 +53,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Composite",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} iterates self.{has_children} and calls child ops",
-                }
+                },
             )
     return results

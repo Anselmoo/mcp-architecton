@@ -18,7 +18,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Visitor",
                             "confidence": 0.6,
                             "reason": f"Class {cls.name}.accept calls visitor.visit_*",
-                        }
+                        },
                     )
                     break
     return results

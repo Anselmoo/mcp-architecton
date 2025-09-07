@@ -73,7 +73,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     f"{sorted(layer_hits)} with roles {sorted(role_classes.values())} "
                     f"and wiring={wiring}"
                 ),
-            }
+            },
         )
 
     return findings

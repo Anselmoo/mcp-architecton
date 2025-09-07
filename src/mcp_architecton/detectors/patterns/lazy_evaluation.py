@@ -25,7 +25,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                                         "reason": (
                                             f"{node.name}.{m.name} lazily caches computed value"
                                         ),
-                                    }
+                                    },
                                 )
                         if isinstance(dec, ast.Attribute) and dec.attr in {"lru_cache", "cache"}:
                             findings.append(
@@ -33,7 +33,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                                     "name": "Lazy Evaluation",
                                     "confidence": 0.6,
                                     "reason": f"Uses functools.{dec.attr} for lazy caching",
-                                }
+                                },
                             )
         elif isinstance(node, ast.FunctionDef):
             for dec in node.decorator_list:
@@ -43,6 +43,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Lazy Evaluation",
                             "confidence": 0.6,
                             "reason": f"Function {node.name} uses functools.{dec.attr}",
-                        }
+                        },
                     )
     return findings

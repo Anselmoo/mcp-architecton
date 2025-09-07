@@ -56,7 +56,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Front Controller",
                 "confidence": 0.65,
                 "reason": (f"Routing table '{route_map_name}' with {dispatchers} dispatcher(s)"),
-            }
+            },
         )
 
     return findings

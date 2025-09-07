@@ -18,7 +18,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Prototype",
                             "confidence": 0.65,
                             "reason": f"Class {cls.name} defines {m.name} using copy module",
-                        }
+                        },
                     )
                     break
     return results

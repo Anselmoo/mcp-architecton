@@ -71,7 +71,7 @@ app: FastMCP = FastMCP("Architecton")
 
 
 def _ranked_enforcement_targets(
-    indicators: list[dict[str, Any]], recs: list[str]
+    indicators: list[dict[str, Any]], recs: list[str],
 ) -> list[tuple[str, str, int, list[str]]]:
     return ranked_enforcement_targets(
         indicators,
@@ -96,21 +96,21 @@ def _thresholded_enforcement(
         return base
     results: list[dict[str, Any]] = []
     raw_entries = base.get("results", [])
-    entries_list: list[Any] = cast(list[Any], raw_entries) if isinstance(raw_entries, list) else []
+    entries_list: list[Any] = cast("list[Any]", raw_entries) if isinstance(raw_entries, list) else []
     for entry in entries_list:
         if not isinstance(entry, dict):
             continue
-        entry_d = cast(dict[str, Any], entry)
+        entry_d = cast("dict[str, Any]", entry)
         indicators_val = entry_d.get("indicators", [])
         indicators_list: list[dict[str, Any]] = []
         if isinstance(indicators_val, list):
-            for i in cast(list[object], indicators_val):
+            for i in cast("list[object]", indicators_val):
                 if isinstance(i, dict):
-                    indicators_list.append(cast(dict[str, Any], i))
+                    indicators_list.append(cast("dict[str, Any]", i))
         recs_val = entry_d.get("recommendations", [])
         recs_list: list[str] = []
         if isinstance(recs_val, list):
-            for x in cast(list[object], recs_val):
+            for x in cast("list[object]", recs_val):
                 recs_list.append(f"{x}")
         ranked = _ranked_enforcement_targets(indicators_list, recs_list)
         chosen = ranked[: max_suggestions if max_suggestions and max_suggestions > 0 else 3]
@@ -128,7 +128,7 @@ def _thresholded_enforcement(
                     "weight": weight,
                     "reasons": reasons,
                     "prompt": prompt,
-                }
+                },
             )
         results.append(
             {
@@ -136,7 +136,7 @@ def _thresholded_enforcement(
                 "metrics": entry_d.get("metrics"),
                 "indicators": indicators_list,
                 "suggestions": suggestions,
-            }
+            },
         )
     return {"results": results}
 
@@ -156,7 +156,7 @@ def list_patterns_impl() -> list[dict[str, Any]]:
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_analyze_patterns_impl(code=code, files=files)
 
@@ -170,7 +170,7 @@ def list_architectures_impl() -> list[dict[str, Any]]:
 
 
 def analyze_architectures_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_analyze_architectures_impl(code=code, files=files)
 
@@ -220,7 +220,7 @@ def suggest_architecture_refactor_impl(code: str) -> dict[str, Any]:
 
 
 def scan_anti_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_scan_anti_patterns_impl(code=code, files=files)
 
@@ -276,7 +276,7 @@ def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[
             findings.append({"source": str(f), "error": f"<read-error: {exc}>"})
             continue
         res = svc_analyze_patterns_impl(code=text)
-        for r in cast(list[dict[str, Any]], res.get("findings", [])):
+        for r in cast("list[dict[str, Any]]", res.get("findings", [])):
             r["source"] = r.get("source") or str(f)
             findings.append(r)
 
@@ -291,11 +291,11 @@ def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[
                             "type": getattr(obj, "kind", ""),
                             "complexity": getattr(obj, "complexity", None),
                             "lineno": getattr(obj, "lineno", None),
-                        }
+                        },
                     )
                 mi: Any = mi_visit(text, multi=True)  # type: ignore[misc]
                 raw_val = raw_analyze(text)  # type: ignore[misc]
-                raw = cast(Any, raw_val)
+                raw = cast("Any", raw_val)
                 metrics.append(
                     {
                         "source": str(f),
@@ -308,7 +308,7 @@ def analyze_paths_impl(paths: list[str], include_metrics: bool = False) -> dict[
                             "comments": getattr(raw, "comments", None),
                             "multi": getattr(raw, "multi", None),
                         },
-                    }
+                    },
                 )
             except Exception as exc:  # noqa: BLE001
                 metrics.append({"source": str(f), "error": str(exc)})
@@ -337,41 +337,41 @@ def propose_architecture_impl(
     arch: dict[str, Any] = analyze_architectures_impl(code=code, files=files)
     metrics_res: dict[str, Any] = analyze_metrics_impl(code=code, files=files)
     enforce: dict[str, Any] = _thresholded_enforcement(
-        code=code, files=files, max_suggestions=max_suggestions
+        code=code, files=files, max_suggestions=max_suggestions,
     )
 
     # Summaries
     pat_findings_raw = pat.get("findings", [])
     pat_findings: list[dict[str, Any]] = []
     if isinstance(pat_findings_raw, list):
-        for obj in cast(list[object], pat_findings_raw):
+        for obj in cast("list[object]", pat_findings_raw):
             if isinstance(obj, dict):
-                pat_findings.append(cast(dict[str, Any], obj))
+                pat_findings.append(cast("dict[str, Any]", obj))
     detected_patterns: list[str] = sorted(
-        {str(f.get("name", "")) for f in pat_findings if f.get("name")}
+        {str(f.get("name", "")) for f in pat_findings if f.get("name")},
     )
 
     arch_findings_raw = arch.get("findings", [])
     arch_findings: list[dict[str, Any]] = []
     if isinstance(arch_findings_raw, list):
-        for obj in cast(list[object], arch_findings_raw):
+        for obj in cast("list[object]", arch_findings_raw):
             if isinstance(obj, dict):
-                arch_findings.append(cast(dict[str, Any], obj))
+                arch_findings.append(cast("dict[str, Any]", obj))
     detected_architectures: list[str] = sorted(
-        {str(f.get("name", "")) for f in arch_findings if f.get("name")}
+        {str(f.get("name", "")) for f in arch_findings if f.get("name")},
     )
 
     # Aggregate Ruff counts across files from metrics
     ruff_summary: dict[str, int] = {}
-    ruff_metrics = cast(dict[str, Any], metrics_res.get("ruff", {}))
+    ruff_metrics = cast("dict[str, Any]", metrics_res.get("ruff", {}))
     results_any = ruff_metrics.get("results", [])
     if isinstance(results_any, list):
-        for entry in cast(list[object], results_any):
+        for entry in cast("list[object]", results_any):
             if isinstance(entry, dict):
-                ed = cast(dict[str, Any], entry)
+                ed = cast("dict[str, Any]", entry)
                 counts_any = ed.get("counts", {})
                 counts_dict = (
-                    cast(dict[str, Any], counts_any) if isinstance(counts_any, dict) else {}
+                    cast("dict[str, Any]", counts_any) if isinstance(counts_any, dict) else {}
                 )
                 for code_key, cnt in counts_dict.items():
                     try:
@@ -383,23 +383,23 @@ def propose_architecture_impl(
     # Anti-pattern indicators snapshot (first source if present)
     anti_indicators: list[dict[str, Any]] = []
     if isinstance(enforce.get("results"), list):
-        enforced_list = cast(list[object], enforce.get("results", []))
+        enforced_list = cast("list[object]", enforce.get("results", []))
         if enforced_list and isinstance(enforced_list[0], dict):
-            first = cast(dict[str, Any], enforced_list[0])
-            anti_indicators = cast(list[dict[str, Any]], first.get("indicators", []))
+            first = cast("dict[str, Any]", enforced_list[0])
+            anti_indicators = cast("list[dict[str, Any]]", first.get("indicators", []))
 
     # Proposal suggestions
     suggestions: list[dict[str, Any]] = []
     if isinstance(enforce.get("results"), list):
         all_sug: list[dict[str, Any]] = []
-        for entry in cast(list[object], enforce.get("results", [])):
+        for entry in cast("list[object]", enforce.get("results", [])):
             if isinstance(entry, dict):
-                ed = cast(dict[str, Any], entry)
+                ed = cast("dict[str, Any]", entry)
                 sug_any = ed.get("suggestions", [])
                 if isinstance(sug_any, list):
-                    for s in cast(list[object], sug_any):
+                    for s in cast("list[object]", sug_any):
                         if isinstance(s, dict):
-                            all_sug.append(cast(dict[str, Any], s))
+                            all_sug.append(cast("dict[str, Any]", s))
         # dedupe by target keeping highest weight
         best: dict[str, dict[str, Any]] = {}
         for s in all_sug:
@@ -408,7 +408,7 @@ def propose_architecture_impl(
             if not cur or int(s.get("weight", 0)) > int(cur.get("weight", 0)):
                 best[t] = s
         suggestions = sorted(
-            best.values(), key=lambda x: (-int(x.get("weight", 0)), str(x.get("target", "")))
+            best.values(), key=lambda x: (-int(x.get("weight", 0)), str(x.get("target", ""))),
         )
         if max_suggestions and max_suggestions > 0:
             suggestions = suggestions[:max_suggestions]
@@ -442,20 +442,20 @@ def propose_patterns_impl(
     Reuses propose_architecture and filters suggestions to Patterns only.
     """
     base: dict[str, Any] = propose_architecture_impl(
-        code=code, files=files, max_suggestions=max_suggestions
+        code=code, files=files, max_suggestions=max_suggestions,
     )
     if "error" in base:
         return base
-    proposal = cast(dict[str, Any], base.get("proposal", {}))
+    proposal = cast("dict[str, Any]", base.get("proposal", {}))
     suggestions_raw = proposal.get("suggestions", [])
     suggestions: list[dict[str, Any]] = []
     if isinstance(suggestions_raw, list):
-        for s in cast(list[object], suggestions_raw):
+        for s in cast("list[object]", suggestions_raw):
             if isinstance(s, dict):
-                sd = cast(dict[str, Any], s)
+                sd = cast("dict[str, Any]", s)
                 if str(sd.get("category", "")) == "Pattern":
                     suggestions.append(sd)
-    summary = cast(dict[str, Any], base.get("summary", {}))
+    summary = cast("dict[str, Any]", base.get("summary", {}))
     return {
         "summary": {
             "patterns_detected": summary.get("patterns_detected", []),
@@ -465,7 +465,7 @@ def propose_patterns_impl(
         "proposal": {
             "suggestions": suggestions[
                 : max_suggestions if max_suggestions and max_suggestions > 0 else 5
-            ]
+            ],
         },
         "raw": base.get("raw", {}),
     }
@@ -488,7 +488,7 @@ def tool_list_refactorings() -> list[dict[str, Any]]:
 
 @app.tool(name="analyze-patterns")
 def tool_analyze_patterns(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect design patterns in a code string or Python files (provide code or files)."""
     return analyze_patterns_impl(code=code, files=files)
@@ -508,7 +508,7 @@ def tool_list_architectures() -> list[dict[str, Any]]:
 
 @app.tool(name="analyze-architectures")
 def tool_analyze_architectures(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect architecture styles in a code string or Python files (provide code or files)."""
     return analyze_architectures_impl(code=code, files=files)
@@ -516,27 +516,27 @@ def tool_analyze_architectures(
 
 @app.tool(name="introduce-pattern")
 def tool_introduce_pattern(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
 ) -> dict[str, Any]:
     """Create/append a scaffold for the named pattern into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file (e.g., refactor-as-new).
     """
     return introduce_pattern_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path,
     )
 
 
 @app.tool(name="introduce-architecture")
 def tool_introduce_architecture(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
 ) -> dict[str, Any]:
     """Create/append a scaffold for the named architecture helper into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file.
     """
     return introduce_architecture_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path
+        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path,
     )
 
 
@@ -562,7 +562,7 @@ def suggest_architecture_refactor(code: str) -> dict[str, Any]:
 
 @app.tool(name="scan-anti-patterns")
 def tool_scan_anti_patterns(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Scan for anti-pattern indicators and map to pattern/architecture recommendations."""
     return scan_anti_patterns_impl(code=code, files=files)
@@ -584,28 +584,28 @@ def analyze_paths(paths: list[str], include_metrics: bool = False) -> dict[str, 
 
 @app.tool(name="propose-architecture")
 def tool_propose_architecture(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Build a prioritized proposal (patterns + architectures) using detectors, metrics, Ruff, and enforcement."""
     return propose_architecture_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 def propose_architecture(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
 ) -> dict[str, Any]:
     return propose_architecture_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 @app.tool(name="propose-patterns")
 def tool_propose_patterns(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Produce a pattern-focused proposal filtered from the unified proposal."""
     return propose_patterns_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 def propose_patterns(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
 ) -> dict[str, Any]:
     return propose_patterns_impl(code=code, files=files, max_suggestions=max_suggestions)
 
@@ -619,7 +619,7 @@ def tool_transform_add_type_hints(code: str) -> dict[str, Any]:
 
 @app.tool(name="thresholded-enforcement")
 def tool_thresholded_enforcement(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 3
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 3,
 ) -> dict[str, Any]:
     """Rank anti-pattern indicators and return top enforcement prompts with reasons."""
     return _thresholded_enforcement(code=code, files=files, max_suggestions=max_suggestions)
@@ -655,33 +655,33 @@ def tool_enforce_ranked(
 ) -> dict[str, Any]:
     """Run indicator scan, rank targets, and enforce the top-N suggestions across paths."""
     return svc_enforce_ranked_impl(
-        paths=paths, top_n=top_n, scope=scope, dry_run=dry_run, out_dir=out_dir
+        paths=paths, top_n=top_n, scope=scope, dry_run=dry_run, out_dir=out_dir,
     )
 
 
 @app.tool(name="scan-anti-architectures")
 def tool_scan_anti_architectures(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5
+    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Scan like thresholded_enforcement but return only architecture suggestions per source."""
     base: dict[str, Any] = _thresholded_enforcement(
-        code=code, files=files, max_suggestions=max_suggestions
+        code=code, files=files, max_suggestions=max_suggestions,
     )
     if "error" in base:
         return base
     results_out: list[dict[str, Any]] = []
     raw_results = base.get("results", [])
     if isinstance(raw_results, list):
-        for entry in cast(list[object], raw_results):
+        for entry in cast("list[object]", raw_results):
             if not isinstance(entry, dict):
                 continue
-            ed = cast(dict[str, Any], entry)
+            ed = cast("dict[str, Any]", entry)
             arch_sug: list[dict[str, Any]] = []
             sug_raw = ed.get("suggestions", [])
             if isinstance(sug_raw, list):
-                for s in cast(list[object], sug_raw):
+                for s in cast("list[object]", sug_raw):
                     if isinstance(s, dict):
-                        sd = cast(dict[str, Any], s)
+                        sd = cast("dict[str, Any]", s)
                         if str(sd.get("category", "")) == "Architecture":
                             arch_sug.append(sd)
             results_out.append(
@@ -692,7 +692,7 @@ def tool_scan_anti_architectures(
                     "suggestions": arch_sug[
                         : max_suggestions if max_suggestions and max_suggestions > 0 else 5
                     ],
-                }
+                },
             )
     return {"results": results_out}
 

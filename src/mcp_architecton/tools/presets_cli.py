@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, cast
+from typing import Any, cast
 
 
 def _presets_path() -> Path:
@@ -12,24 +13,24 @@ def _presets_path() -> Path:
     return Path(__file__).resolve().parents[3] / "data" / "prompt_presets.json"
 
 
-def _load() -> Dict[str, List[Mapping[str, Any]]]:
+def _load() -> dict[str, list[Mapping[str, Any]]]:
     p = _presets_path()
     try:
         raw_obj: object = json.loads(p.read_text())
-        typed_raw: Dict[str, Any] = (
-            cast(Dict[str, Any], raw_obj) if isinstance(raw_obj, dict) else {}
+        typed_raw: dict[str, Any] = (
+            cast("dict[str, Any]", raw_obj) if isinstance(raw_obj, dict) else {}
         )
         prompts_obj: object = typed_raw.get("prompts", [])
         subruns_obj: object = typed_raw.get("subruns", [])
 
         # normalize to list of mappings
-        def _coerce(lst_obj: object) -> List[Mapping[str, Any]]:
+        def _coerce(lst_obj: object) -> list[Mapping[str, Any]]:
             if isinstance(lst_obj, list):
-                items: List[object] = cast(List[object], lst_obj)
-                result: List[Mapping[str, Any]] = []
+                items: list[object] = cast("list[object]", lst_obj)
+                result: list[Mapping[str, Any]] = []
                 for x_obj in items:
                     if isinstance(x_obj, Mapping):
-                        result.append(cast(Mapping[str, Any], x_obj))
+                        result.append(cast("Mapping[str, Any]", x_obj))
                 return result
             return []
 
@@ -41,7 +42,7 @@ def _load() -> Dict[str, List[Mapping[str, Any]]]:
 def cmd_list(args: argparse.Namespace) -> int:
     data = _load()
     kind: str = args.kind
-    items: List[Mapping[str, Any]] = data.get(kind, [])
+    items: list[Mapping[str, Any]] = data.get(kind, [])
     for it in items:
         _id = str(it.get("id", ""))
         name = str(it.get("name", ""))

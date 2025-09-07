@@ -15,6 +15,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Iterator",
                     "confidence": 0.7,
                     "reason": f"Class {cls.name} defines __iter__ and __next__",
-                }
+                },
             )
     return results

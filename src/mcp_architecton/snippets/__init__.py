@@ -7,12 +7,10 @@ an alternate snippets package/module on PYTHONPATH.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .aliases import NAME_ALIASES
 
 
-def get_snippet(name: str) -> Optional[str]:
+def get_snippet(name: str) -> str | None:
     """Return a canned snippet string for a given canonical name, if any.
 
     Minimal default returns None so generators fall back to programmatic output.

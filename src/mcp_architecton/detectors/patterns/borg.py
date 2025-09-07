@@ -30,6 +30,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Borg",
                     "confidence": 0.7,
                     "reason": f"Class {cls.name} assigns __dict__ to shared state",
-                }
+                },
             )
     return findings

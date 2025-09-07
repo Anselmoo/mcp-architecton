@@ -41,6 +41,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Decorator",
                     "confidence": 0.65,
                     "reason": f"Class {cls.name} delegates to wrapped component via self.{wrapped_attr}",
-                }
+                },
             )
     return results

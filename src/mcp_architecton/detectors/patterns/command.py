@@ -20,6 +20,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "reason": (
                         f"Class {cls.name} defines an invoker method {methods & INVOKE_NAMES}"
                     ),
-                }
+                },
             )
     return results

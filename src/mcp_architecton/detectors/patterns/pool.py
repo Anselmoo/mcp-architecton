@@ -27,6 +27,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Pool",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} exposes acquire/release with internal pool",
-                }
+                },
             )
     return findings

@@ -28,6 +28,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "reason": (
                         f"Class {cls.name} defines __init_subclass__ and a registry container"
                     ),
-                }
+                },
             )
     return findings

@@ -75,7 +75,7 @@ def scan_anti_patterns_impl(
         # Raw metrics
         try:
             raw_val = raw_analyze(text)  # type: ignore[misc]
-            raw_any = cast(Any, raw_val)
+            raw_any = cast("Any", raw_val)
             loc = getattr(raw_any, "loc", 0)
             if isinstance(loc, int) and loc > 1000:
                 ind.append({"type": "large_file", "loc": loc})
@@ -118,7 +118,7 @@ def scan_anti_patterns_impl(
                         size = end - start + 1
                         if size > 80:
                             ind.append(
-                                {"type": "very_large_function", "lines": size, "name": node.name}
+                                {"type": "very_large_function", "lines": size, "name": node.name},
                             )
                             recs.append("Extract methods (Template Method) or strategies")
                             detected_large_fn = True
@@ -159,7 +159,7 @@ def scan_anti_patterns_impl(
                         "type": getattr(obj, "kind", ""),
                         "complexity": getattr(obj, "complexity", None),
                         "lineno": getattr(obj, "lineno", None),
-                    }
+                    },
                 )
         except Exception:
             pass
@@ -178,26 +178,26 @@ def scan_anti_patterns_impl(
                     "cyclomatic_complexity": cc_list,
                     "maintainability_index": mi_val,
                     "raw": {
-                        "loc": getattr(cast(Any, raw_val), "loc", None)
+                        "loc": getattr(cast("Any", raw_val), "loc", None)
                         if raw_val is not None
                         else None,
-                        "lloc": getattr(cast(Any, raw_val), "lloc", None)
+                        "lloc": getattr(cast("Any", raw_val), "lloc", None)
                         if raw_val is not None
                         else None,
-                        "sloc": getattr(cast(Any, raw_val), "sloc", None)
+                        "sloc": getattr(cast("Any", raw_val), "sloc", None)
                         if raw_val is not None
                         else None,
-                        "comments": getattr(cast(Any, raw_val), "comments", None)
+                        "comments": getattr(cast("Any", raw_val), "comments", None)
                         if raw_val is not None
                         else None,
-                        "multi": getattr(cast(Any, raw_val), "multi", None)
+                        "multi": getattr(cast("Any", raw_val), "multi", None)
                         if raw_val is not None
                         else None,
                     },
                 },
                 "indicators": indicators,
                 "recommendations": recommendations,
-            }
+            },
         )
 
     return {"results": results}

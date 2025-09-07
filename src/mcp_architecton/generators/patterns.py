@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ..snippets.catalog import CatalogEntry  # type: ignore
 
@@ -254,7 +255,7 @@ def gen_factory(_: str, __: CatalogEntry | None) -> str | None:
     desc = str(
         entry.get("intent")
         or entry.get("description")
-        or "Factory interface and example implementation."
+        or "Factory interface and example implementation.",
     )
     refs = entry.get("refs", []) or []
     refs_comment = ("\n# References:\n" + "\n".join(f"# - {r}" for r in refs)) if refs else ""
@@ -364,7 +365,7 @@ def gen_registry(_: str, __: CatalogEntry | None) -> str | None:
     desc = str(
         entry.get("intent")
         or entry.get("description")
-        or "Simple key->value registry with safe access."
+        or "Simple key->value registry with safe access.",
     )
     refs = entry.get("refs", []) or []
     refs_comment = ("\n# References:\n" + "\n".join(f"# - {r}" for r in refs)) if refs else ""

@@ -44,7 +44,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "3-Tier Architecture",
                 "confidence": 0.65,
                 "reason": f"Roles {sorted(roles.values())} with wiring steps={wiring}",
-            }
+            },
         )
 
     return findings

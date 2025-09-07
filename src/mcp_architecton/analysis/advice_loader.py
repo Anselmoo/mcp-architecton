@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import inspect
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from mcp_architecton.analysis.advice_defaults import (
     ARCHITECTURE_REFACTOR_ADVICE_DEFAULTS,
@@ -78,7 +78,7 @@ def _extract_advice_from_doc(doc: str | None) -> str | None:
     return candidate[:220]
 
 
-def build_advice_maps() -> Tuple[Dict[str, str], Dict[str, str]]:
+def build_advice_maps() -> tuple[dict[str, str], dict[str, str]]:
     """Build pattern and architecture advice maps dynamically.
 
     Priority per name:
@@ -86,8 +86,8 @@ def build_advice_maps() -> Tuple[Dict[str, str], Dict[str, str]]:
     2. Defaults from advice_defaults.
     Names and categories are derived from the detectors registry.
     """
-    pattern_map: Dict[str, str] = dict(PATTERN_REFACTOR_ADVICE_DEFAULTS)
-    arch_map: Dict[str, str] = dict(ARCHITECTURE_REFACTOR_ADVICE_DEFAULTS)
+    pattern_map: dict[str, str] = dict(PATTERN_REFACTOR_ADVICE_DEFAULTS)
+    arch_map: dict[str, str] = dict(ARCHITECTURE_REFACTOR_ADVICE_DEFAULTS)
 
     for name, detector in detector_registry.items():
         category = _category_for_name(name)

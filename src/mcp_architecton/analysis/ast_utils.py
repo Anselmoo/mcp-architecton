@@ -32,7 +32,7 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
                     "name": name,
                     "confidence": 0.0,
                     "reason": f"detector-error: {exc}",
-                }
+                },
             )
     return findings
 

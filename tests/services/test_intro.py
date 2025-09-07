@@ -12,6 +12,7 @@ class TestIntroServiceBasic(unittest.TestCase):
         """Test that the intro service can be imported without errors."""
         try:
             from mcp_architecton.services import intro
+
             self.assertIsNotNone(intro)
         except ImportError as e:
             # If there's a circular import, this test will document it
@@ -21,14 +22,14 @@ class TestIntroServiceBasic(unittest.TestCase):
         """Test that the canonical pattern name function exists and is callable."""
         try:
             from mcp_architecton.services.intro import _canonical_pattern_name
-            
+
             # Test basic functionality if import succeeds
             result = _canonical_pattern_name("test")
             self.assertIsInstance(result, str)
-            
+
             result = _canonical_pattern_name(None)
             self.assertEqual(result, "")
-            
+
         except ImportError:
             # Skip test if there are dependency issues
             self.skipTest("Cannot import intro module due to dependencies")
@@ -37,10 +38,10 @@ class TestIntroServiceBasic(unittest.TestCase):
         """Test that the diff function exists and works."""
         try:
             from mcp_architecton.services.intro import _diff
-            
+
             result = _diff("line1\nline2", "line1\nmodified", "test.py")
             self.assertIsInstance(result, str)
-            
+
         except ImportError:
             self.skipTest("Cannot import intro module due to dependencies")
 

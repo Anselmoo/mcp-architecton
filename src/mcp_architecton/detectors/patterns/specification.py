@@ -21,6 +21,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Specification",
                     "confidence": 0.65,
                     "reason": f"Class {cls.name} defines is_satisfied_by and boolean combinators",
-                }
+                },
             )
     return findings

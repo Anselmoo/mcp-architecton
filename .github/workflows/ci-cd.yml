@@ -42,16 +42,14 @@ jobs:
             uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
             uv-${{ runner.os }}-
 
-      - name: Install dependencies and pre-commit
+      - name: Install dependencies (with dev extras)
         run: |
           uv sync --dev --locked
-          uv tool install pre-commit
 
-      - name: Run pre-commit hooks (if config present)
+      - name: Run pre-commit via tox env (if config present)
         run: |
           if [ -f .pre-commit-config.yaml ]; then
-            uv tool run pre-commit install
-            uv tool run pre-commit run --all-files --show-diff-on-failure
+            uv run tox -e pre-commit -q
           else
             echo "No .pre-commit-config.yaml found, skipping."
           fi
@@ -98,6 +96,10 @@ jobs:
       - name: Lint via tox (lint env)
         run: |
           uv run tox -e lint
+
+      - name: Run full Ruff rule set (ALL) read-only
+        run: |
+          uv run ruff check --select=ALL . || true
 
       - name: Run tests via tox with coverage
         env:

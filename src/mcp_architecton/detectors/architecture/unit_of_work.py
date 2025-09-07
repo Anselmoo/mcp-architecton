@@ -28,7 +28,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Unit of Work",
                         "confidence": 0.6,
                         "reason": f"{node.name} manages session and transaction lifecycle",
-                    }
+                    },
                 )
 
     return findings

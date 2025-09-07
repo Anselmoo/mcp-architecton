@@ -32,6 +32,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "reason": (
                         f"Class '{cls.name}' provides multiple factories for {sorted(product_set)}"
                     ),
-                }
+                },
             )
     return results

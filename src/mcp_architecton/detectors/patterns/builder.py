@@ -29,6 +29,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Builder",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} has fluent setters and a build() method",
-                }
+                },
             )
     return results

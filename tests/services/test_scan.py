@@ -23,11 +23,11 @@ def hello_world():
     return "greeting"
 """
         result = scan_anti_patterns_impl(code=simple_code)
-        
+
         self.assertIn("results", result)
         self.assertIsInstance(result["results"], list)
         self.assertEqual(len(result["results"]), 1)
-        
+
         # Check that the result has expected structure
         first_result = result["results"][0]
         self.assertIn("source", first_result)
@@ -57,14 +57,14 @@ def complex_function(x):
     return "minimal"
 """
         result = scan_anti_patterns_impl(code=complex_code)
-        
+
         # Should have results
         self.assertIn("results", result)
         self.assertEqual(len(result["results"]), 1)
-        
+
         first_result = result["results"][0]
         indicators = first_result.get("indicators", [])
-        
+
         # Should detect high complexity
         high_cc_indicators = [ind for ind in indicators if ind.get("type") == "high_cc"]
         self.assertTrue(len(high_cc_indicators) > 0, "Should detect high cyclomatic complexity")
@@ -78,10 +78,10 @@ def debug_function():
     return True
 """
         result = scan_anti_patterns_impl(code=code_with_print)
-        
+
         first_result = result["results"][0]
         indicators = first_result.get("indicators", [])
-        
+
         # Should detect print statement usage
         print_indicators = [ind for ind in indicators if ind.get("type") == "print_logging"]
         self.assertTrue(len(print_indicators) > 0, "Should detect print statement usage")
@@ -94,10 +94,10 @@ def dangerous_function(code_string):
     return result
 """
         result = scan_anti_patterns_impl(code=dangerous_code)
-        
+
         first_result = result["results"][0]
         indicators = first_result.get("indicators", [])
-        
+
         # Should detect eval usage
         eval_indicators = [ind for ind in indicators if ind.get("type") == "dynamic_eval"]
         self.assertTrue(len(eval_indicators) > 0, "Should detect eval usage")
@@ -106,12 +106,12 @@ def dangerous_function(code_string):
         """Test detection of large files."""
         # Create a large code string (over 1000 lines)
         large_code = "# Large file\n" + "def function_{}(): pass\n" * 1500
-        
+
         result = scan_anti_patterns_impl(code=large_code)
-        
+
         first_result = result["results"][0]
         indicators = first_result.get("indicators", [])
-        
+
         # Should detect large file
         large_file_indicators = [ind for ind in indicators if ind.get("type") == "large_file"]
         self.assertTrue(len(large_file_indicators) > 0, "Should detect large file")
@@ -119,23 +119,23 @@ def dangerous_function(code_string):
     def test_file_reading_error_handling(self):
         """Test that file reading errors are handled gracefully."""
         result = scan_anti_patterns_impl(files=["non_existent_file.py"])
-        
+
         self.assertIn("results", result)
         self.assertEqual(len(result["results"]), 1)
-        
+
         # Should handle read error gracefully
         first_result = result["results"][0]
         self.assertIn("source", first_result)
         self.assertTrue("non_existent_file.py" in first_result["source"])
 
-    @patch('mcp_architecton.services.scan.cc_visit')
+    @patch("mcp_architecton.services.scan.cc_visit")
     def test_radon_import_error_handling(self, mock_cc_visit):
         """Test graceful handling when radon is not available."""
         # This test ensures the try-except around radon imports works correctly
         simple_code = "def test(): pass"
-        
+
         # Mock the import failure by patching the module imports at the top level
-        with patch.dict('sys.modules', {'radon': None}):
+        with patch.dict("sys.modules", {"radon": None}):
             # The function should handle import errors gracefully
             result = scan_anti_patterns_impl(code=simple_code)
             # With our current implementation, it will return an error about radon
@@ -145,10 +145,10 @@ def dangerous_function(code_string):
     def test_empty_code_handling(self):
         """Test handling of empty code."""
         result = scan_anti_patterns_impl(code="# empty")  # Need non-empty string
-        
+
         self.assertIn("results", result)
         self.assertEqual(len(result["results"]), 1)
-        
+
         first_result = result["results"][0]
         self.assertIn("source", first_result)
         self.assertIn("metrics", first_result)
@@ -156,17 +156,22 @@ def dangerous_function(code_string):
     def test_very_large_function_detection(self):
         """Test detection of very large functions."""
         # Create a function with many lines
-        large_function_code = """
+        large_function_code = (
+            """
 def very_large_function():
-""" + "    # Comment line\n" * 90  # Creates a function with >80 lines
-        
+"""
+            + "    # Comment line\n" * 90
+        )  # Creates a function with >80 lines
+
         result = scan_anti_patterns_impl(code=large_function_code)
-        
+
         first_result = result["results"][0]
         indicators = first_result.get("indicators", [])
-        
+
         # Should detect very large function
-        large_func_indicators = [ind for ind in indicators if ind.get("type") == "very_large_function"]
+        large_func_indicators = [
+            ind for ind in indicators if ind.get("type") == "very_large_function"
+        ]
         self.assertTrue(len(large_func_indicators) > 0, "Should detect very large function")
 
 

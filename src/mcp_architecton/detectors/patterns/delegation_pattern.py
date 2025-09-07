@@ -31,7 +31,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Delegation Pattern",
                         "confidence": 0.55,
                         "reason": f"Class {node.name} forwards multiple methods to a delegate",
-                    }
+                    },
                 )
 
     return findings

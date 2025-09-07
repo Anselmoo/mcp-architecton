@@ -20,7 +20,7 @@ def list_patterns_impl() -> list[dict[str, Any]]:
             return []
         data = json.loads(catalog_path.read_text())
         items = (
-            cast(list[dict[str, Any]], data.get("patterns", [])) if isinstance(data, dict) else []
+            cast("list[dict[str, Any]]", data.get("patterns", [])) if isinstance(data, dict) else []
         )
         out: list[dict[str, Any]] = []
         for it in items:
@@ -36,7 +36,7 @@ def list_patterns_impl() -> list[dict[str, Any]]:
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect design patterns in a code string or Python files (provide code or files).
 
@@ -54,7 +54,7 @@ def analyze_patterns_impl(
         except Exception as exc:  # noqa: BLE001
             findings.append({"source": "<input>", "error": str(exc)})
         else:
-            for r in cast(list[dict[str, Any]], res or []):
+            for r in cast("list[dict[str, Any]]", res or []):
                 out = dict(r)
                 # Normalize key 'name' -> 'pattern' if needed
                 if "pattern" not in out and "name" in out:
@@ -76,7 +76,7 @@ def analyze_patterns_impl(
             except Exception as exc:  # noqa: BLE001
                 findings.append({"source": str(p), "error": str(exc)})
             else:
-                for r in cast(list[dict[str, Any]], res or []):
+                for r in cast("list[dict[str, Any]]", res or []):
                     out = dict(r)
                     if "pattern" not in out and "name" in out:
                         out["pattern"] = out.get("name")
@@ -86,4 +86,4 @@ def analyze_patterns_impl(
     return {"findings": findings}
 
 
-__all__ = ["list_patterns_impl", "analyze_patterns_impl"]
+__all__ = ["analyze_patterns_impl", "list_patterns_impl"]

@@ -35,7 +35,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Flyweight",
                         "confidence": 0.55,
                         "reason": f"Function {node.name} appears to use a cache for instances",
-                    }
+                    },
                 )
                 break
     return results

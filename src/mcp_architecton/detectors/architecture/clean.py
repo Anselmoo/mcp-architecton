@@ -62,7 +62,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     f"{sorted(clean_hits)} / domain {sorted(domain_hits)} / "
                     f"external_imports={external_imports}"
                 ),
-            }
+            },
         )
 
     return findings

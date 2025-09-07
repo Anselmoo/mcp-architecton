@@ -38,6 +38,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Adapter",
                     "confidence": 0.6,
                     "reason": f"Class {cls.name} delegates to adaptee via self.{adaptee_attr}",
-                }
+                },
             )
     return results

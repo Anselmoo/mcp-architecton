@@ -19,7 +19,7 @@ def list_architectures_impl() -> list[dict[str, Any]]:
             return []
         data = json.loads(catalog_path.read_text())
         items = (
-            cast(list[dict[str, Any]], data.get("patterns", [])) if isinstance(data, dict) else []
+            cast("list[dict[str, Any]]", data.get("patterns", [])) if isinstance(data, dict) else []
         )
         out: list[dict[str, Any]] = []
         for it in items:
@@ -33,7 +33,7 @@ def list_architectures_impl() -> list[dict[str, Any]]:
 
 
 def analyze_architectures_impl(
-    code: str | None = None, files: list[str] | None = None
+    code: str | None = None, files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect architecture styles in a code string or Python files (provide code or files)."""
     if not code and not files:
@@ -78,7 +78,7 @@ def analyze_architectures_impl(
         except Exception as exc:  # noqa: BLE001
             findings.append({"source": "<input>", "error": str(exc)})
         else:
-            for r in cast(list[dict[str, Any]], res or []):
+            for r in cast("list[dict[str, Any]]", res or []):
                 if _is_arch(r):
                     out = _normalize(r)
                     out["source"] = "<input>"
@@ -97,7 +97,7 @@ def analyze_architectures_impl(
             except Exception as exc:  # noqa: BLE001
                 findings.append({"source": str(p), "error": str(exc)})
             else:
-                for r in cast(list[dict[str, Any]], res or []):
+                for r in cast("list[dict[str, Any]]", res or []):
                     if _is_arch(r):
                         out = _normalize(r)
                         out["source"] = str(p)
@@ -106,4 +106,4 @@ def analyze_architectures_impl(
     return {"findings": findings}
 
 
-__all__ = ["list_architectures_impl", "analyze_architectures_impl"]
+__all__ = ["analyze_architectures_impl", "list_architectures_impl"]

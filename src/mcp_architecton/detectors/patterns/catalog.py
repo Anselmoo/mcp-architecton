@@ -35,7 +35,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                                 "name": "Catalog",
                                 "confidence": 0.6,
                                 "reason": f"{node.name}.{m.name} dispatches to specialized methods",
-                            }
+                            },
                         )
                         break
         elif isinstance(node, ast.FunctionDef):
@@ -45,6 +45,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Catalog",
                         "confidence": 0.55,
                         "reason": f"Function {node.name} dispatches via catalog mapping",
-                    }
+                    },
                 )
     return findings

@@ -24,7 +24,7 @@ class _AddTypeHints(cst.CSTTransformer):
         return updated_node
 
     def leave_FunctionDef(  # noqa: N802
-        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef,
     ) -> cst.FunctionDef:
         if updated_node.returns is None and updated_node.name.value != "__init__":
             self.changed = True

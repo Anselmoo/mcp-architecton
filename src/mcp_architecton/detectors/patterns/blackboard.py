@@ -38,7 +38,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Blackboard",
                 "confidence": 0.4,
                 "reason": "Central blackboard with multiple writers",
-            }
+            },
         )
 
     return findings

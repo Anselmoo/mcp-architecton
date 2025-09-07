@@ -7,7 +7,8 @@ Exports:
 
 from __future__ import annotations
 
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 try:  # pragma: no cover - optional dependency
     from ..snippets.catalog import CatalogEntry  # type: ignore
@@ -21,7 +22,7 @@ from .architectures import ARCH_GENERATORS
 from .patterns import PATTERN_GENERATORS
 
 # Public type alias
-Generator = Callable[[str, Optional[CatalogEntry]], str | None]
+Generator = Callable[[str, CatalogEntry | None], str | None]
 
 # Merge registries (patterns + architectures)
 BUILTINS: dict[str, Generator] = {
@@ -29,4 +30,4 @@ BUILTINS: dict[str, Generator] = {
     **ARCH_GENERATORS,
 }
 
-__all__ = ["Generator", "BUILTINS"]
+__all__ = ["BUILTINS", "Generator"]

@@ -9,7 +9,7 @@ description = "MCP server for analyzing and introducing Python design patterns"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Your Name" }]
+authors = [{ name = "Anselm Hahn", email = "anselm.hahn@gmail.com" }]
 keywords = ["mcp", "design-patterns", "python", "refactoring", "analysis"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -46,11 +46,31 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = ["E501"]
+# Temporarily enable ALL Ruff rule families. A baseline ignore list will be generated
+# and iteratively reduced. (Generated automatically.)
+select = ["ALL"]
+ignore = [
+    "E501", # line length
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107", # missing docstrings
+]
 
 [tool.ruff.lint.per-file-ignores]
 "demo/*.py" = ["I001"]
+"examples/non_pythonic_*.py" = [
+    "PGH004",
+] # allow broad ruff: noqa in illustrative anti-pattern examples
+"tests/*.py" = [
+    "S101",
+    "SLF001",
+    "D103",
+] # allow pytest asserts, private access in tests, missing docstrings
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=src/mcp_architecton --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml"
@@ -69,9 +89,17 @@ exclude_lines = [
     'def __repr__\(\):',
     'def __str__\(\):',
 ]
+fail_under = 35
+precision = 1
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_architecton"]
 
 [dependency-groups]
-dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "tox>=4.28.4", "tox-uv>=1.28.0"]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "tox>=4.28.4",
+    "tox-uv>=1.28.0",
+    "pre-commit>=3.8.0",
+]

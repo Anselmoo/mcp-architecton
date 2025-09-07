@@ -1,0 +1,25 @@
+repos:
+  # General lightweight repo hygiene checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  # Ruff handles lint (E/F/I), formatting, and now docstring (D) rules configured in pyproject.toml
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.12 # keep roughly in sync with pyproject ruff version
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+          - --select=ALL
+      - id: ruff-format
+  # Modernize syntax automatically based on target Python version
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.20.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py310-plus"]

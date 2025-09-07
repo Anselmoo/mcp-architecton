@@ -107,11 +107,11 @@ def canonicalize_name(name: str | None) -> str:
 
 __all__ = [
     "ARCHITECTURE_ALIASES",
+    "NAME_ALIASES",
     "PATTERN_ALIASES",
     "REFACTOR_ALIASES",
-    "NAME_ALIASES",
     "canonicalize_architecture_name",
+    "canonicalize_name",
     "canonicalize_pattern_name",
     "canonicalize_refactor_name",
-    "canonicalize_name",
 ]

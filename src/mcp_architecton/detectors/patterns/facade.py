@@ -39,7 +39,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                                 "name": "Facade",
                                 "confidence": 0.6,
                                 "reason": f"Class {node.name}.{m.name} orchestrates multiple calls",
-                            }
+                            },
                         )
                         break
         elif isinstance(node, ast.FunctionDef):
@@ -49,7 +49,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Facade",
                         "confidence": 0.55,
                         "reason": f"Function {node.name} orchestrates multiple calls",
-                    }
+                    },
                 )
 
     return results

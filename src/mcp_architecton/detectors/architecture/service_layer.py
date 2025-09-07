@@ -46,7 +46,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Service Layer",
                 "confidence": 0.5,
                 "reason": "Service/usecase orchestrating repositories or unit of work",
-            }
+            },
         )
     else:
         # scan for functions orchestrating a uow transaction
@@ -57,7 +57,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Service Layer",
                         "confidence": 0.55,
                         "reason": f"Function {node.name} uses uow context and commits",
-                    }
+                    },
                 )
                 break
 

@@ -36,7 +36,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Strategy",
                             "confidence": 0.65,
                             "reason": f"Class {cls.name} invokes strategy via self.{strat_attr}(...)",
-                        }
+                        },
                     )
                     break
     return results

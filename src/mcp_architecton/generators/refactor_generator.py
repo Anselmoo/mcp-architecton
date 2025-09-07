@@ -5,10 +5,11 @@ import json
 import logging
 import py_compile
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from difflib import unified_diff
 from pathlib import Path
-from typing import Any, Callable, Optional, cast
+from typing import Any, cast
 
 import astroid
 import libcst as cst
@@ -27,7 +28,7 @@ from .patterns import PATTERN_GENERATORS
 logger = logging.getLogger(__name__)
 
 
-Generator = Callable[[str, Optional[Any]], str | None]
+Generator = Callable[[str, Any | None], str | None]
 
 
 def _canon(name: str | None) -> str:
@@ -55,7 +56,7 @@ def _render_template(snippet: str, context: dict[str, Any]) -> str:
         return snippet
 
 
-def _load_catalog_entry(name: str, category: str) -> Optional[dict[str, Any]]:
+def _load_catalog_entry(name: str, category: str) -> dict[str, Any] | None:
     """Best-effort loader for catalog.json entries.
 
     Matches by case-insensitive name; returns dict with optional refs/description.
@@ -78,12 +79,12 @@ def _load_catalog_entry(name: str, category: str) -> Optional[dict[str, Any]]:
         data_loaded: Any = json.loads(catalog_path.read_text())
         if not isinstance(data_loaded, dict):
             return None
-        data_map: dict[str, Any] = cast(dict[str, Any], data_loaded)
+        data_map: dict[str, Any] = cast("dict[str, Any]", data_loaded)
         patterns_any: Any = data_map.get("patterns")
         if not isinstance(patterns_any, list):
             return None
         patterns_val: list[dict[str, Any]] = [
-            cast(dict[str, Any], it) for it in patterns_any if isinstance(it, dict)
+            cast("dict[str, Any]", it) for it in patterns_any if isinstance(it, dict)
         ]
 
         # Normalize name and allow a few common aliases from generator keys to catalog names
@@ -129,13 +130,13 @@ def _resolve_refactoring_refs(limit: int = 3) -> list[str]:
             data_obj: Any = json.loads(raw)
             data: dict[str, Any]
             if isinstance(data_obj, dict):
-                data = cast(dict[str, Any], data_obj)
+                data = cast("dict[str, Any]", data_obj)
             else:
                 data = {}
             # 1) General refactoring entry
             patterns_any: Any = data.get("patterns") or []
             patterns_list: list[dict[str, Any]] = [
-                cast(dict[str, Any], it) for it in patterns_any if isinstance(it, dict)
+                cast("dict[str, Any]", it) for it in patterns_any if isinstance(it, dict)
             ]
             for it in patterns_list:
                 cat_val = str(it.get("category", ""))
@@ -148,7 +149,7 @@ def _resolve_refactoring_refs(limit: int = 3) -> list[str]:
             # 2) Optional explicit techniques list if present
             techniques_any: Any = data.get("refactorings") or []
             techniques_list: list[dict[str, Any]] = [
-                cast(dict[str, Any], t) for t in techniques_any if isinstance(t, dict)
+                cast("dict[str, Any]", t) for t in techniques_any if isinstance(t, dict)
             ]
             for tech in techniques_list:
                 url_val = str(tech.get("url", ""))
@@ -211,7 +212,7 @@ def _build_boilerplate_header(
             "RedBaron",
             "tree-sitter",
             "py_compile",
-        ]
+        ],
     )
     tools_short = "ast/libcst/py_compile"
 
@@ -229,7 +230,7 @@ def _build_boilerplate_header(
     lines.append(f"Validation: {tools_line}")
     if level:
         lines.append(
-            f"Complexity: {level} (LOC={loc or '?'}; defs={defs or '?'}) — prefer small seams; consider Strangler Fig/Branch-by-Abstraction"
+            f"Complexity: {level} (LOC={loc or '?'}; defs={defs or '?'}) — prefer small seams; consider Strangler Fig/Branch-by-Abstraction",
         )
     # Minimal prompt hint to guide LLM-assisted edits (catalog-sourced if available)
     ph = (
@@ -255,9 +256,7 @@ def _top_level_defs(code: str) -> set[str]:
     try:
         tree = ast.parse(code)
         for node in tree.body:
-            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-                names.add(node.name)
-            elif isinstance(node, ast.ClassDef):
+            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef) or isinstance(node, ast.ClassDef):
                 names.add(node.name)
     except SyntaxError:
         pass
@@ -355,7 +354,7 @@ class IntroduceResult:
     dry_run: bool
     created: bool
     appended: bool
-    written_to: Optional[str]
+    written_to: str | None
     diff: str
     warnings: list[str]
 
@@ -379,7 +378,7 @@ def _write_or_diff(old: str, new: str, path: Path, dry_run: bool) -> tuple[str, 
     old_lines = old.splitlines(keepends=True)
     new_lines = new.splitlines(keepends=True)
     diff = "".join(
-        unified_diff(old_lines, new_lines, fromfile=str(path), tofile=str(path), lineterm="")
+        unified_diff(old_lines, new_lines, fromfile=str(path), tofile=str(path), lineterm=""),
     )
     wrote = False
     if not dry_run:
@@ -390,7 +389,7 @@ def _write_or_diff(old: str, new: str, path: Path, dry_run: bool) -> tuple[str, 
 
 
 def introduce_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
 ) -> dict[str, Any]:
     """Generic introduce helper used by services.enforce and tools.
 
@@ -427,7 +426,7 @@ def introduce_impl(
     if isinstance(entry, dict):
         entry_contract_any = entry.get("contract")
         if isinstance(entry_contract_any, dict):
-            entry_contract = cast(dict[str, Any], entry_contract_any)
+            entry_contract = cast("dict[str, Any]", entry_contract_any)
             ci_any = entry_contract.get("inputs")
             co_any = entry_contract.get("outputs")
             if isinstance(ci_any, str) and ci_any.strip():
@@ -507,7 +506,7 @@ def introduce_impl(
 
 
 def introduce_pattern_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
 ) -> dict[str, Any]:
     sel = _select_generator(name)
     if not sel:
@@ -519,7 +518,7 @@ def introduce_pattern_impl(
 
 
 def introduce_architecture_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None
+    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
 ) -> dict[str, Any]:
     sel = _select_generator(name)
     if not sel:
@@ -531,7 +530,7 @@ def introduce_architecture_impl(
 
 
 __all__ = [
+    "introduce_architecture_impl",
     "introduce_impl",
     "introduce_pattern_impl",
-    "introduce_architecture_impl",
 ]

@@ -28,7 +28,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Repository",
                         "confidence": 0.6,
                         "reason": f"Class {node.name} with CRUD methods and session usage",
-                    }
+                    },
                 )
 
     return findings

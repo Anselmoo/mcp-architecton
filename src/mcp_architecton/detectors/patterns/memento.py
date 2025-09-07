@@ -26,6 +26,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Memento",
                     "confidence": 0.65,
                     "reason": f"Class {cls.name} provides save/restore state methods",
-                }
+                },
             )
     return findings

@@ -23,6 +23,6 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                         "name": "Observer",
                         "confidence": 0.7,
                         "reason": f"Class {cls.name} manages observers with attach/detach/notify",
-                    }
+                    },
                 )
     return results

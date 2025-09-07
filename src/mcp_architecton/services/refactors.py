@@ -17,10 +17,10 @@ def list_refactorings_impl() -> list[dict[str, Any]]:
         raw = json.loads(catalog_path.read_text())
         if not isinstance(raw, dict):
             return []
-        data: dict[str, Any] = cast(dict[str, Any], raw)
+        data: dict[str, Any] = cast("dict[str, Any]", raw)
         items_raw = data.get("refactorings", [])
         items: list[dict[str, Any]] = [
-            cast(dict[str, Any], it) for it in items_raw if isinstance(it, dict)
+            cast("dict[str, Any]", it) for it in items_raw if isinstance(it, dict)
         ]
         out: list[dict[str, Any]] = []
         for it in items:

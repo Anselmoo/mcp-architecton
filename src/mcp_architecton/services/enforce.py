@@ -146,14 +146,14 @@ def enforce_ranked_impl(
     recs: list[str] = []
     results_any = scan_res.get("results", [])
     if isinstance(results_any, list):
-        for entry in cast(list[object], results_any):
+        for entry in cast("list[object]", results_any):
             if not isinstance(entry, dict):
                 continue
-            ed = cast(dict[str, Any], entry)
+            ed = cast("dict[str, Any]", entry)
             if isinstance(ed.get("indicators"), list):
-                indicators.extend(cast(list[dict[str, Any]], ed["indicators"]))
+                indicators.extend(cast("list[dict[str, Any]]", ed["indicators"]))
             if isinstance(ed.get("recommendations"), list):
-                recs.extend([str(x) for x in cast(list[Any], ed["recommendations"])])
+                recs.extend([str(x) for x in cast("list[Any]", ed["recommendations"])])
 
     pat_map, arch_map = build_advice_maps()
     ranked = ranked_enforcement_targets(indicators, recs, pat_map, arch_map, _impl_aliases_src)
@@ -162,7 +162,7 @@ def enforce_ranked_impl(
     applied: list[dict[str, Any]] = []
     for tgt_name, _category, weight, reasons in chosen:
         res = enforce_target_impl(
-            name=tgt_name, paths=paths, scope=scope, dry_run=dry_run, out_dir=out_dir
+            name=tgt_name, paths=paths, scope=scope, dry_run=dry_run, out_dir=out_dir,
         )
         res["weight"] = weight
         res["reasons"] = reasons
@@ -178,4 +178,4 @@ def enforce_ranked_impl(
     }
 
 
-__all__ = ["enforce_target_impl", "enforce_ranked_impl"]
+__all__ = ["enforce_ranked_impl", "enforce_target_impl"]

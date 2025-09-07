@@ -47,12 +47,12 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                         "type": getattr(obj, "kind", ""),
                         "complexity": getattr(obj, "complexity", None),
                         "lineno": getattr(obj, "lineno", None),
-                    }
+                    },
                 )
 
             mi: Any = mi_visit(text, multi=True)  # type: ignore[misc]
             raw_val = raw_analyze(text)  # type: ignore[misc]
-            raw = cast(Any, raw_val)
+            raw = cast("Any", raw_val)
             results.append(
                 {
                     "source": label,
@@ -65,7 +65,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                         "comments": getattr(raw, "comments", None),
                         "multi": getattr(raw, "multi", None),
                     },
-                }
+                },
             )
         except Exception as exc:  # noqa: BLE001
             results.append({"source": label, "error": str(exc)})
@@ -92,7 +92,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
             if targets:
                 proc = subprocess.run(
                     [ruff_exe, "check", "--output-format", "json", *targets],
-                    capture_output=True,
+                    check=False, capture_output=True,
                     text=True,
                 )
                 if proc.returncode in (0, 1):  # 1 indicates lint findings
@@ -101,7 +101,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                         # Aggregate by file path and rule code
                         agg: dict[str, dict[str, int]] = {}
                         items_list: list[dict[str, Any]] = (
-                            cast(list[dict[str, Any]], data) if isinstance(data, list) else []
+                            cast("list[dict[str, Any]]", data) if isinstance(data, list) else []
                         )
                         for item in items_list:
                             try:
@@ -115,7 +115,7 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
                         ruff_out = {
                             "results": [
                                 {"file": fp, "counts": counts} for fp, counts in sorted(agg.items())
-                            ]
+                            ],
                         }
                     except Exception as exc:  # noqa: BLE001
                         ruff_out = {"error": f"ruff parse error: {exc}"}

@@ -37,7 +37,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                                         f"Class {node.name} exposes subscribe/unsubscribe and "
                                         "publish"
                                     ),
-                                }
+                                },
                             )
                             break
         elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):

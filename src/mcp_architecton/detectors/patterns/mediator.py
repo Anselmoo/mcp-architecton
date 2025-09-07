@@ -26,7 +26,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                     "name": "Mediator",
                     "confidence": 0.55,
                     "reason": f"Mediator class {name} with register/notify used by colleagues",
-                }
+                },
             )
             break
 

@@ -32,7 +32,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             "name": "Proxy",
                             "confidence": 0.65,
                             "reason": f"Class {cls.name} delegates to real subject via self.{real_attr}",
-                        }
+                        },
                     )
                     break
     return results

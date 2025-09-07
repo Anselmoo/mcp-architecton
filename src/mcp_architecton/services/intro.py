@@ -19,7 +19,7 @@ def _diff(old: str, new: str, path: str) -> str:
             fromfile=path,
             tofile=path,
             lineterm="",
-        )
+        ),
     )
 
 
@@ -30,9 +30,9 @@ def _canonical_pattern_name(name: str | None) -> str:
 
 
 __all__ = [
-    "_diff",
     "_canonical_pattern_name",
+    "_diff",
+    "introduce_architecture_impl",
     "introduce_impl",
     "introduce_pattern_impl",
-    "introduce_architecture_impl",
 ]

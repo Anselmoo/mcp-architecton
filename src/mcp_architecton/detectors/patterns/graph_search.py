@@ -23,7 +23,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Graph Search",
                 "confidence": 0.35,
                 "reason": "Search algorithm names with queue/stack usage",
-            }
+            },
         )
 
     return findings

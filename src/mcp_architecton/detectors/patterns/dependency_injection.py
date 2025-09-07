@@ -67,7 +67,7 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                 "name": "Dependency Injection",
                 "confidence": 0.6,
                 "reason": f"Classes with injected dependencies: {', '.join(n for n, _, _ in class_infos)}",
-            }
+            },
         )
 
     return findings
