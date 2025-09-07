@@ -256,7 +256,11 @@ def _top_level_defs(code: str) -> set[str]:
     try:
         tree = ast.parse(code)
         for node in tree.body:
-            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef) or isinstance(node, ast.ClassDef):
+            if (
+                isinstance(node, ast.FunctionDef)
+                or isinstance(node, ast.AsyncFunctionDef)
+                or isinstance(node, ast.ClassDef)
+            ):
                 names.add(node.name)
     except SyntaxError:
         pass
@@ -389,7 +393,11 @@ def _write_or_diff(old: str, new: str, path: Path, dry_run: bool) -> tuple[str, 
 
 
 def introduce_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
+    *,
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
 ) -> dict[str, Any]:
     """Generic introduce helper used by services.enforce and tools.
 
@@ -506,7 +514,11 @@ def introduce_impl(
 
 
 def introduce_pattern_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
+    *,
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
 ) -> dict[str, Any]:
     sel = _select_generator(name)
     if not sel:
@@ -518,7 +530,11 @@ def introduce_pattern_impl(
 
 
 def introduce_architecture_impl(
-    *, name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
+    *,
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
 ) -> dict[str, Any]:
     sel = _select_generator(name)
     if not sel:

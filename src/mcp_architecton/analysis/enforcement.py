@@ -56,7 +56,9 @@ def _tokenize_lower(text: str) -> str:
 
 
 def _canonical_from_text(
-    token_text: str, advice_keys: list[str], aliases: dict[str, str],
+    token_text: str,
+    advice_keys: list[str],
+    aliases: dict[str, str],
 ) -> set[str]:
     """Find advice keys referenced in free-form text using direct and alias-based matching."""
     text = token_text.lower()
@@ -172,7 +174,10 @@ def ranked_enforcement_targets(
                 entries.append((k, 1))
 
     def add_target(
-        name: str, reasons: list[str], w: int, acc: dict[str, tuple[str, int, set[str]]],
+        name: str,
+        reasons: list[str],
+        w: int,
+        acc: dict[str, tuple[str, int, set[str]]],
     ) -> None:
         cat = "Pattern" if name in pattern_advice else "Architecture"
         if name not in acc:

@@ -162,7 +162,11 @@ def enforce_ranked_impl(
     applied: list[dict[str, Any]] = []
     for tgt_name, _category, weight, reasons in chosen:
         res = enforce_target_impl(
-            name=tgt_name, paths=paths, scope=scope, dry_run=dry_run, out_dir=out_dir,
+            name=tgt_name,
+            paths=paths,
+            scope=scope,
+            dry_run=dry_run,
+            out_dir=out_dir,
         )
         res["weight"] = weight
         res["reasons"] = reasons

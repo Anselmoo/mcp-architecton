@@ -92,7 +92,8 @@ def analyze_metrics_impl(code: str | None = None, files: list[str] | None = None
             if targets:
                 proc = subprocess.run(
                     [ruff_exe, "check", "--output-format", "json", *targets],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                 )
                 if proc.returncode in (0, 1):  # 1 indicates lint findings

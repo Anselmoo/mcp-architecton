@@ -58,7 +58,8 @@ def detect(tree: ast.AST, source: str) -> list[dict[str, Any]]:
                             if isinstance(sub, ast.Call):
                                 func = sub.func
                                 if isinstance(func, ast.Attribute) and isinstance(
-                                    func.value, ast.Name,
+                                    func.value,
+                                    ast.Name,
                                 ):
                                     if func.value.id in imported_modules:
                                         external_calls += 1

@@ -33,7 +33,8 @@ def list_architectures_impl() -> list[dict[str, Any]]:
 
 
 def analyze_architectures_impl(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect architecture styles in a code string or Python files (provide code or files)."""
     if not code and not files:

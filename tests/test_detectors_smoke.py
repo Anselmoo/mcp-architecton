@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from mcp_architecton.detectors.patterns import factory, adapter, builder
+from mcp_architecton.detectors.patterns import adapter, builder, factory
 
 SIMPLE_FACTORY = (
     """\nclass A:\n    pass\n\nclass B:\n    pass\n\ndef factory():\n    return A()\n"""

@@ -36,7 +36,8 @@ def list_patterns_impl() -> list[dict[str, Any]]:
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect design patterns in a code string or Python files (provide code or files).
 

@@ -71,7 +71,8 @@ app: FastMCP = FastMCP("Architecton")
 
 
 def _ranked_enforcement_targets(
-    indicators: list[dict[str, Any]], recs: list[str],
+    indicators: list[dict[str, Any]],
+    recs: list[str],
 ) -> list[tuple[str, str, int, list[str]]]:
     return ranked_enforcement_targets(
         indicators,
@@ -96,7 +97,9 @@ def _thresholded_enforcement(
         return base
     results: list[dict[str, Any]] = []
     raw_entries = base.get("results", [])
-    entries_list: list[Any] = cast("list[Any]", raw_entries) if isinstance(raw_entries, list) else []
+    entries_list: list[Any] = (
+        cast("list[Any]", raw_entries) if isinstance(raw_entries, list) else []
+    )
     for entry in entries_list:
         if not isinstance(entry, dict):
             continue
@@ -156,7 +159,8 @@ def list_patterns_impl() -> list[dict[str, Any]]:
 
 
 def analyze_patterns_impl(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_analyze_patterns_impl(code=code, files=files)
 
@@ -170,7 +174,8 @@ def list_architectures_impl() -> list[dict[str, Any]]:
 
 
 def analyze_architectures_impl(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_analyze_architectures_impl(code=code, files=files)
 
@@ -220,7 +225,8 @@ def suggest_architecture_refactor_impl(code: str) -> dict[str, Any]:
 
 
 def scan_anti_patterns_impl(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     return svc_scan_anti_patterns_impl(code=code, files=files)
 
@@ -337,7 +343,9 @@ def propose_architecture_impl(
     arch: dict[str, Any] = analyze_architectures_impl(code=code, files=files)
     metrics_res: dict[str, Any] = analyze_metrics_impl(code=code, files=files)
     enforce: dict[str, Any] = _thresholded_enforcement(
-        code=code, files=files, max_suggestions=max_suggestions,
+        code=code,
+        files=files,
+        max_suggestions=max_suggestions,
     )
 
     # Summaries
@@ -408,7 +416,8 @@ def propose_architecture_impl(
             if not cur or int(s.get("weight", 0)) > int(cur.get("weight", 0)):
                 best[t] = s
         suggestions = sorted(
-            best.values(), key=lambda x: (-int(x.get("weight", 0)), str(x.get("target", ""))),
+            best.values(),
+            key=lambda x: (-int(x.get("weight", 0)), str(x.get("target", ""))),
         )
         if max_suggestions and max_suggestions > 0:
             suggestions = suggestions[:max_suggestions]
@@ -442,7 +451,9 @@ def propose_patterns_impl(
     Reuses propose_architecture and filters suggestions to Patterns only.
     """
     base: dict[str, Any] = propose_architecture_impl(
-        code=code, files=files, max_suggestions=max_suggestions,
+        code=code,
+        files=files,
+        max_suggestions=max_suggestions,
     )
     if "error" in base:
         return base
@@ -488,7 +499,8 @@ def tool_list_refactorings() -> list[dict[str, Any]]:
 
 @app.tool(name="analyze-patterns")
 def tool_analyze_patterns(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect design patterns in a code string or Python files (provide code or files)."""
     return analyze_patterns_impl(code=code, files=files)
@@ -508,7 +520,8 @@ def tool_list_architectures() -> list[dict[str, Any]]:
 
 @app.tool(name="analyze-architectures")
 def tool_analyze_architectures(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Detect architecture styles in a code string or Python files (provide code or files)."""
     return analyze_architectures_impl(code=code, files=files)
@@ -516,27 +529,39 @@ def tool_analyze_architectures(
 
 @app.tool(name="introduce-pattern")
 def tool_introduce_pattern(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
 ) -> dict[str, Any]:
     """Create/append a scaffold for the named pattern into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file (e.g., refactor-as-new).
     """
     return introduce_pattern_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path,
+        name=name,
+        module_path=module_path,
+        dry_run=dry_run,
+        out_path=out_path,
     )
 
 
 @app.tool(name="introduce-architecture")
 def tool_introduce_architecture(
-    name: str, module_path: str, dry_run: bool = False, out_path: str | None = None,
+    name: str,
+    module_path: str,
+    dry_run: bool = False,
+    out_path: str | None = None,
 ) -> dict[str, Any]:
     """Create/append a scaffold for the named architecture helper into module_path.
 
     Optional: dry_run (no writes) and out_path to write to a different file.
     """
     return introduce_architecture_impl(
-        name=name, module_path=module_path, dry_run=dry_run, out_path=out_path,
+        name=name,
+        module_path=module_path,
+        dry_run=dry_run,
+        out_path=out_path,
     )
 
 
@@ -562,7 +587,8 @@ def suggest_architecture_refactor(code: str) -> dict[str, Any]:
 
 @app.tool(name="scan-anti-patterns")
 def tool_scan_anti_patterns(
-    code: str | None = None, files: list[str] | None = None,
+    code: str | None = None,
+    files: list[str] | None = None,
 ) -> dict[str, Any]:
     """Scan for anti-pattern indicators and map to pattern/architecture recommendations."""
     return scan_anti_patterns_impl(code=code, files=files)
@@ -584,28 +610,36 @@ def analyze_paths(paths: list[str], include_metrics: bool = False) -> dict[str, 
 
 @app.tool(name="propose-architecture")
 def tool_propose_architecture(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Build a prioritized proposal (patterns + architectures) using detectors, metrics, Ruff, and enforcement."""
     return propose_architecture_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 def propose_architecture(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 5,
 ) -> dict[str, Any]:
     return propose_architecture_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 @app.tool(name="propose-patterns")
 def tool_propose_patterns(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Produce a pattern-focused proposal filtered from the unified proposal."""
     return propose_patterns_impl(code=code, files=files, max_suggestions=max_suggestions)
 
 
 def propose_patterns(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 5,
 ) -> dict[str, Any]:
     return propose_patterns_impl(code=code, files=files, max_suggestions=max_suggestions)
 
@@ -619,7 +653,9 @@ def tool_transform_add_type_hints(code: str) -> dict[str, Any]:
 
 @app.tool(name="thresholded-enforcement")
 def tool_thresholded_enforcement(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 3,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 3,
 ) -> dict[str, Any]:
     """Rank anti-pattern indicators and return top enforcement prompts with reasons."""
     return _thresholded_enforcement(code=code, files=files, max_suggestions=max_suggestions)
@@ -655,17 +691,25 @@ def tool_enforce_ranked(
 ) -> dict[str, Any]:
     """Run indicator scan, rank targets, and enforce the top-N suggestions across paths."""
     return svc_enforce_ranked_impl(
-        paths=paths, top_n=top_n, scope=scope, dry_run=dry_run, out_dir=out_dir,
+        paths=paths,
+        top_n=top_n,
+        scope=scope,
+        dry_run=dry_run,
+        out_dir=out_dir,
     )
 
 
 @app.tool(name="scan-anti-architectures")
 def tool_scan_anti_architectures(
-    code: str | None = None, files: list[str] | None = None, max_suggestions: int = 5,
+    code: str | None = None,
+    files: list[str] | None = None,
+    max_suggestions: int = 5,
 ) -> dict[str, Any]:
     """Scan like thresholded_enforcement but return only architecture suggestions per source."""
     base: dict[str, Any] = _thresholded_enforcement(
-        code=code, files=files, max_suggestions=max_suggestions,
+        code=code,
+        files=files,
+        max_suggestions=max_suggestions,
     )
     if "error" in base:
         return base
