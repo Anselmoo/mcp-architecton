@@ -179,16 +179,58 @@ uv run architecton-presets show prompts minimal-seam-integration
 
 ## 🧪 Development
 
+### Quick Setup
+
 ```shell
-# Install
+# Complete development setup
+make dev-setup
+
+# Or manual setup:
 uv sync --dev
-
-# Lint
-uv run ruff check .
-
-# Test
-uv run -q pytest -q
+uv run pre-commit install
 ```
+
+### Quality Assurance
+
+We maintain high code quality standards with comprehensive tooling:
+
+```shell
+# Run all quality checks
+make all-checks
+
+# Individual checks
+make lint           # Ruff linting
+make format         # Code formatting  
+make type-check     # MyPy type checking
+make security       # Bandit security scan
+make test-cov       # Tests with coverage
+
+# Using tox (comprehensive)
+make tox                    # All environments
+make tox-lint              # Linting only
+make tox-coverage          # Coverage report
+make tox-security          # Security checks
+```
+
+### Development Standards
+
+- **Code Coverage**: Minimum 65% (currently achieved)
+- **Linting**: Ruff with comprehensive rule set (ALL rules enabled)
+- **Type Checking**: MyPy with strict optional checking
+- **Security**: Bandit security scanning
+- **Pre-commit**: Automated quality checks on every commit
+- **Testing**: pytest with coverage reporting
+
+### CI/CD Pipeline
+
+Our comprehensive CI pipeline includes:
+
+1. **Pre-commit Hooks**: File hygiene, secret detection, formatting
+2. **Linting & Static Analysis**: Ruff, MyPy, Bandit security scans
+3. **Testing & Coverage**: Multi-Python version testing (3.10, 3.11, 3.12)
+4. **Quality Gate**: All tox environments must pass
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
 
 ## 📚 Documentation
 
