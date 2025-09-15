@@ -33,7 +33,11 @@ class TestEnforcement(unittest.TestCase):
         aliases = {"Factory Method": "Factory"}
 
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases,
+            indicators,
+            recommendations,
+            pattern_advice,
+            arch_advice,
+            aliases,
         )
         self.assertIsInstance(result, list)
         # Should return list of tuples: (name, category, weight, reasons)
@@ -53,7 +57,11 @@ class TestEnforcement(unittest.TestCase):
         aliases = {"Strategy Pattern": "Strategy", "Factory Method": "Factory"}
 
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases,
+            indicators,
+            recommendations,
+            pattern_advice,
+            arch_advice,
+            aliases,
         )
         self.assertIsInstance(result, list)
         # Results should be sorted by weight (descending)
@@ -73,7 +81,11 @@ class TestEnforcement(unittest.TestCase):
         aliases = {"Layered Architecture": "Layered", "Clean Architecture": "Clean"}
 
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases,
+            indicators,
+            recommendations,
+            pattern_advice,
+            arch_advice,
+            aliases,
         )
         self.assertIsInstance(result, list)
 
@@ -89,7 +101,11 @@ class TestEnforcement(unittest.TestCase):
         aliases = {"Layered Architecture": "Layered"}
 
         result = ranked_enforcement_targets(
-            indicators, recommendations, pattern_advice, arch_advice, aliases,
+            indicators,
+            recommendations,
+            pattern_advice,
+            arch_advice,
+            aliases,
         )
         self.assertIsInstance(result, list)
 

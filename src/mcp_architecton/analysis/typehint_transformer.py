@@ -43,7 +43,7 @@ def add_type_hints_to_code(source: str) -> tuple[bool, str]:
     """
     try:
         mod = parse_module(source)
-    except Exception:
+    except Exception:  # noqa: BLE001 # LibCST can raise various parse errors
         return (False, source)
 
     transformer = _AddTypeHints()

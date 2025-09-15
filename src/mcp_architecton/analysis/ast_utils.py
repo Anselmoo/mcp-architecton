@@ -21,7 +21,7 @@ def analyze_code_for_patterns(source: str, registry: dict[str, Any]) -> list[dic
 
     findings: list[dict[str, Any]] = []
     for name, detector in registry.items():
-        try:
+        try:  # Performance: Need error isolation per detector
             res = detector(tree, source)
             if res:
                 findings.extend(res)
@@ -47,7 +47,7 @@ def astroid_summary(source: str) -> dict[str, Any]:
         mod: Any = astroid.parse(source)  # type: ignore[attr-defined]
         try:
             body: list[Any] = list(mod.body)  # type: ignore[attr-defined]
-        except Exception:
+        except Exception:  # noqa: BLE001
             body = []
         else:
             names = sorted([str(getattr(n, "name", "")) for n in body if hasattr(n, "name")])

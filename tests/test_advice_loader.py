@@ -47,8 +47,10 @@ class TestAdviceLoader(unittest.TestCase):
         """Test fallback module loading when detector has no module."""
         mock_detector = MagicMock()
 
-        with patch("inspect.getmodule", return_value=None), \
-             patch("importlib.import_module", side_effect=ImportError()) as mock_import:
+        with (
+            patch("inspect.getmodule", return_value=None),
+            patch("importlib.import_module", side_effect=ImportError()) as mock_import,
+        ):
             result = _load_module_for_detector("test_pattern", mock_detector)
             self.assertIsNone(result)
             # Should try importing known module paths

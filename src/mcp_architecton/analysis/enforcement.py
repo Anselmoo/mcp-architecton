@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Any
 
 # Richer tokenization using tree-sitter (declared in pyproject)
-from tree_sitter import Parser  # type: ignore
-from tree_sitter_languages import get_language  # type: ignore
+from tree_sitter import Parser  # type: ignore[import-untyped]
+from tree_sitter_languages import get_language  # type: ignore[import-untyped]
 
 
 def _simplify(s: str) -> str:
@@ -35,7 +35,7 @@ def _tokenize_lower(text: str) -> str:
         tokens: list[str] = []
         visited: set[int] = set()
 
-        def _walk(cur) -> None:  # type: ignore[no-redef]
+        def _walk(cur: Any) -> None:  # TreeCursor type not typed
             node = cur.node  # type: ignore[attr-defined]
             if id(node) in visited:
                 return
@@ -43,7 +43,7 @@ def _tokenize_lower(text: str) -> str:
             try:
                 if node.type in {"identifier", "string", "comment"}:  # type: ignore[attr-defined]
                     tokens.append(src[node.start_byte : node.end_byte].lower())  # type: ignore[attr-defined]
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
             if cur.goto_first_child():  # type: ignore[attr-defined]
                 _walk(cur)
@@ -53,7 +53,7 @@ def _tokenize_lower(text: str) -> str:
 
         _walk(cursor)
         return " ".join(tokens) if tokens else text.lower()
-    except Exception:
+    except Exception:  # noqa: BLE001
         return text.lower()
 
 
@@ -70,10 +70,9 @@ def _canonical_from_text(
         if k.lower() in text:
             hits.add(k)
     # alias contains
-    for alias_key in aliases:
+    for alias_key, alias_val in aliases.items():
         if alias_key in text:
             # try to map alias to the closest advice key
-            alias_val = aliases[alias_key]
             simp_val = _simplify(alias_val)
             for k in advice_keys:
                 if _simplify(k) == simp_val or alias_val in k.lower():
@@ -205,7 +204,7 @@ def ranked_enforcement_targets(
             add_target(k, ["recommendation"], 1, acc)
 
     items: list[tuple[str, str, int, list[str]]] = [
-        (name, cat, weight, sorted(list(reasons))) for name, (cat, weight, reasons) in acc.items()
+        (name, cat, weight, sorted(reasons)) for name, (cat, weight, reasons) in acc.items()
     ]
     items.sort(key=lambda t: (-t[2], t[0]))
     return items

@@ -51,7 +51,7 @@ def _load_module_for_detector(name: str, detector: Any) -> Any:
         f"mcp_architecton.detectors.architecture.{slug}",
     ]
     for mname in candidates:
-        try:
+        try:  # Performance: Need to try each module sequentially
             return importlib.import_module(mname)
         except (ImportError, ModuleNotFoundError):
             continue
