@@ -26,7 +26,7 @@ dependencies = [
     "radon>=6.0.1",
     "redbaron>=0.9.2",
     "rope>=1.14.0",
-    "ruff>=0.12.9",
+    "ruff>=0.13.0",
     "tree-sitter>=0.25.1",
     "tree-sitter-languages>=1.10.2",
     "tree-sitter-python>=0.23.6",
@@ -103,11 +103,15 @@ packages = ["src/mcp_architecton"]
 dev = [
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
+    "pytest-xdist>=3.3.0",
     "tox>=4.28.4",
     "tox-uv>=1.28.0",
-    "pre-commit>=3.8.0",
-    "mypy>=1.8.0",
+    "pre-commit>=4.0.0",
+    "mypy>=1.18.0",
     "types-requests",
+    "bandit[toml]>=1.7.0",
+    "safety>=3.0.0",
+    "doc8>=1.1.0",
 ]
 
 [tool.mypy]
@@ -132,3 +136,11 @@ module = [
     "ast_grep_py.*",
 ]
 ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "examples"]
+skips = ["B101", "B601", "B602", "B603"]  # Skip assert_used_test, shell=True hardcoded_tmp_directory
+tests = ["B201", "B301", "B401", "B501", "B506", "B602", "B701"]
+
+[tool.bandit.assert_used]
+skip_tests = ["*_test.py", "test_*.py"]

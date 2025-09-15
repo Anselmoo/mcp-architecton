@@ -54,11 +54,68 @@ jobs:
             echo "No .pre-commit-config.yaml found, skipping."
           fi
 
-  # Testing and Quality using tox
-  test-and-quality:
-    name: Test & Quality (${{ matrix.python-version }})
+  # Linting and Static Analysis 
+  lint-and-static-analysis:
+    name: Lint & Static Analysis
     runs-on: ubuntu-latest
     needs: pre-commit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/uv.lock
+            **/pyproject.toml
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            uv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev --locked
+
+      - name: Run Ruff linting with full rule set
+        run: |
+          uv run tox -e lint
+
+      - name: Run Ruff linting with auto-fixes (check for fixable issues)
+        run: |
+          uv run tox -e lint-fix
+
+      - name: Run type checking with MyPy
+        run: |
+          uv run tox -e type-check
+
+      - name: Security scan with Bandit
+        run: |
+          uv run bandit -r src/ --format json --output bandit-report.json || true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+
+  # Testing and Coverage using tox
+  test-and-coverage:
+    name: Test & Coverage (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: lint-and-static-analysis
     strategy:
       fail-fast: false
       matrix:
@@ -93,14 +150,6 @@ jobs:
         run: |
           uv sync --dev --locked
 
-      - name: Lint via tox (lint env)
-        run: |
-          uv run tox -e lint
-
-      - name: Run full Ruff rule set (ALL) read-only
-        run: |
-          uv run ruff check --select=ALL . || true
-
       - name: Run tests via tox with coverage
         env:
           PYTHONPATH: src
@@ -109,12 +158,24 @@ jobs:
           echo "Running tox env: $TOX_ENV"
           uv run tox -e "$TOX_ENV" -q
 
+      - name: Generate coverage report (Python 3.12 only)
+        if: matrix.python-version == '3.12'
+        run: |
+          uv run tox -e coverage
+
       - name: Upload coverage artifact (XML)
         if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
           path: coverage.xml
+
+      - name: Upload coverage artifact (HTML)
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
 
       - name: Upload coverage to Codecov (optional)
         if: matrix.python-version == '3.11' && secrets.CODECOV_TOKEN != ''
@@ -123,11 +184,50 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: anselmoo/mcp-architecton
 
+  # Comprehensive Quality Gate 
+  quality-gate:
+    name: Quality Gate - All Tox Environments
+    runs-on: ubuntu-latest
+    needs: [lint-and-static-analysis, test-and-coverage]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/uv.lock
+            **/pyproject.toml
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            uv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev --locked
+
+      - name: Run all tox environments (comprehensive check)
+        run: |
+          uv run tox -e lint,type-check,coverage --parallel
+
   # Build Python package and store artifacts (guarded)
   build-python:
     name: Build Python Package 📦
     runs-on: ubuntu-latest
-    needs: test-and-quality
+    needs: quality-gate
     if: github.event_name != 'pull_request' && vars.ENABLE_PUBLISH == '1'
     steps:
       - name: Checkout code
@@ -160,7 +260,7 @@ jobs:
   build-docker:
     name: Build Docker Image 🐳
     runs-on: ubuntu-latest
-    needs: test-and-quality
+    needs: quality-gate
     if: github.event_name != 'pull_request' && vars.ENABLE_DOCKER == '1' && hashFiles('Dockerfile') != ''
     permissions:
       contents: read

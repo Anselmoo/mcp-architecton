@@ -430,3 +430,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Security reports and artifacts
+bandit-report.json
+safety-report.json
+.secrets.baseline.tmp

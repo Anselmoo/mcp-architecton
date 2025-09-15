@@ -4,22 +4,78 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        args: ['--maxkb=1024']  # Limit to 1MB files
       - id: check-ast
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-toml
       - id: check-yaml
+        args: ['--allow-multiple-documents']
+      - id: debug-statements
+      - id: detect-private-key
       - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+      - id: name-tests-test
+        args: ['--pytest-test-first']
       - id: trailing-whitespace
+        args: ['--markdown-linebreak-ext=md']
+
+  # Security checks for secrets and vulnerabilities
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
   # Ruff handles lint (E/F/I), formatting, and now docstring (D) rules configured in pyproject.toml
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.12 # keep roughly in sync with pyproject ruff version
+    rev: v0.13.0 # Updated to latest version
     hooks:
       - id: ruff
         args:
           - --fix
-          - --select=ALL
+          - --exit-non-zero-on-fix
       - id: ruff-format
+
+  # Type checking with MyPy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+        args: [--strict-optional, --warn-redundant-casts, --warn-unused-ignores]
+
   # Modernize syntax automatically based on target Python version
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: ["--py310-plus"]
+
+  # Additional Python code quality checks
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.8.0
+    hooks:
+      - id: bandit
+        args: ['-r', '--format', 'custom', '--skip', 'B101,B601']
+        files: ^src/.*\.py$
+
+  # Check for common security issues
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.3
+    hooks:
+      - id: python-safety-dependencies-check
+
+  # Conventional commit enforcement
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
