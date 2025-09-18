@@ -6,8 +6,38 @@ repos:
       - id: check-added-large-files
       - id: check-ast
       - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: detect-private-key
+
+  # Security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.0
+    hooks:
+      - id: bandit
+        args: ['-c', 'pyproject.toml']
+        additional_dependencies: ['bandit[toml]']
+
+  # Dependency vulnerability scanning
+  - repo: https://github.com/pyupio/safety
+    rev: 3.2.8
+    hooks:
+      - id: safety
+        args: ['--json']
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.3
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+        args: [--ignore-missing-imports, --no-strict-optional]
+
   # Ruff handles lint (E/F/I), formatting, and now docstring (D) rules configured in pyproject.toml
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.12 # keep roughly in sync with pyproject ruff version
@@ -15,11 +45,25 @@ repos:
       - id: ruff
         args:
           - --fix
-          - --select=ALL
+          - --unsafe-fixes
       - id: ruff-format
+
   # Modernize syntax automatically based on target Python version
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: ["--py310-plus"]
+
+  # Commit message linting
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.3.0
+    hooks:
+      - id: commitizen
+
+  # Documentation checks
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.7.0
+    hooks:
+      - id: interrogate
+        args: [--quiet, --fail-under=70, src/]

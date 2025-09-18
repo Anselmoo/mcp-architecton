@@ -1,0 +1,45 @@
+# Markdownlint configuration
+# See: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# Rule customizations
+MD003:
+  # Header style - enforce ATX style (# ## ###)
+  style: "atx"
+
+MD007:
+  # Unordered list indentation - 2 spaces
+  indent: 2
+
+MD013:
+  # Line length - more lenient for documentation
+  line_length: 120
+  # Ignore code blocks and tables
+  code_blocks: false
+  tables: false
+
+MD024:
+  # Multiple headers with the same content - allow in different sections
+  allow_different_nesting: true
+
+MD025:
+  # Multiple top level headers - allow for multiple h1s in README
+  front_matter_title: "^\\s*title\\s*[:=]"
+
+MD033:
+  # Inline HTML - allow for GitHub-specific elements
+  allowed_elements: ["img", "br", "sub", "sup", "details", "summary"]
+
+MD034:
+  # Bare URL used - disable as it conflicts with auto-linking
+  false
+
+MD041:
+  # First line in file should be a top level header - disable for flexibility
+  false
+
+MD046:
+  # Code block style - enforce fenced blocks
+  style: "fenced"
