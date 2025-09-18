@@ -36,6 +36,7 @@ mcp-architecton = "mcp_architecton.server:main"
 architecton-local = "scripts.run_server:main"
 architecton-presets = "mcp_architecton.tools.presets_cli:main"
 architecton = "mcp_architecton.server:main"
+architecton-pipeline = "scripts.run_pipeline:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -92,6 +93,23 @@ exclude_lines = [
 fail_under = 35
 precision = 1
 
+[tool.bandit]
+exclude_dirs = ["tests", "examples"]
+skips = ["B101", "B601"]  # Allow assert statements and shell=True for specific use cases
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, tighten over time
+ignore_missing_imports = true
+no_implicit_optional = true
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_architecton"]
 
@@ -102,4 +120,10 @@ dev = [
     "tox>=4.28.4",
     "tox-uv>=1.28.0",
     "pre-commit>=3.8.0",
+    "bandit>=1.8.0",
+    "safety>=3.2.0",
+    "mypy>=1.14.0",
+    "types-requests",
+    "commitizen>=4.3.0",
+    "interrogate>=1.7.0",
 ]
