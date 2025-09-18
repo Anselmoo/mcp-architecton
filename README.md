@@ -189,7 +189,36 @@ uv run ruff check .
 
 # Test
 uv run -q pytest -q
+
+# Run comprehensive pipeline
+python scripts/run_pipeline.py --verbose
+
+# Run specific pipeline stage
+python scripts/run_pipeline.py --stage security --verbose
 ```
+
+### Pre-commit Hooks
+
+Install pre-commit hooks for automatic quality checks:
+
+```shell
+# Install pre-commit hooks
+uv run pre-commit install
+
+# Run manually
+uv run pre-commit run --all-files
+```
+
+### Pipeline Framework
+
+The project includes a comprehensive pipeline for code quality, security, and analysis:
+
+- **Security Stage**: Bandit security scanning, dependency vulnerability checks
+- **Quality Stage**: Ruff linting/formatting, MyPy type checking, complexity analysis  
+- **Testing Stage**: Comprehensive test execution with coverage reporting
+- **Analysis Stage**: Architecture and design pattern detection
+
+See [docs/pipeline.md](docs/pipeline.md) and [docs/pre-commit.md](docs/pre-commit.md) for detailed documentation.
 
 ## 📚 Documentation
 

@@ -98,7 +98,7 @@ class TestStage:
         """Run pytest with coverage."""
         try:
             # Build pytest command
-            cmd = ["pytest", "-v", "--cov=src/mcp_architecton", "--cov-report=xml", "--cov-report=term"]
+            cmd = ["uv", "run", "pytest", "-v", "--cov=src/mcp_architecton", "--cov-report=xml", "--cov-report=term"]
             
             if self.parallel:
                 cmd.extend(["-n", "auto"])  # Requires pytest-xdist
@@ -173,7 +173,7 @@ class TestStage:
         """Run performance benchmarks."""
         try:
             # Run pytest with benchmark plugin if available
-            cmd = ["pytest", "--benchmark-only", "--benchmark-json=benchmark.json"]
+            cmd = ["uv", "run", "pytest", "--benchmark-only", "--benchmark-json=benchmark.json"]
             
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             

@@ -101,7 +101,7 @@ class QualityStage:
         """Run Ruff linting."""
         try:
             # Run ruff check with JSON output
-            cmd = ["ruff", "check", ".", "--output-format", "json"]
+            cmd = ["uv", "run", "ruff", "check", ".", "--output-format", "json"]
             if self.fix_issues:
                 cmd.extend(["--fix", "--unsafe-fixes"])
             
@@ -150,7 +150,7 @@ class QualityStage:
         """Run Ruff formatting check."""
         try:
             # Run ruff format in check mode
-            cmd = ["ruff", "format", ".", "--check"]
+            cmd = ["uv", "run", "ruff", "format", ".", "--check"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             
             if result.returncode == 0:
@@ -178,7 +178,7 @@ class QualityStage:
         """Run MyPy type checking."""
         try:
             # Run mypy with error output
-            cmd = ["mypy", "src/", "--ignore-missing-imports", "--no-strict-optional"]
+            cmd = ["uv", "run", "mypy", "src/", "--ignore-missing-imports", "--no-strict-optional"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             
             if result.returncode == 0:
@@ -215,7 +215,7 @@ class QualityStage:
         """Run code complexity analysis using radon."""
         try:
             # Run radon cyclomatic complexity
-            cmd = ["radon", "cc", "src/", "--json"]
+            cmd = ["uv", "run", "radon", "cc", "src/", "--json"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             
             if result.stdout:

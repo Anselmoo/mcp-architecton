@@ -203,7 +203,7 @@ class AnalysisStage:
         """Run maintainability analysis using radon."""
         try:
             # Run radon maintainability index
-            cmd = ["radon", "mi", "src/", "--json"]
+            cmd = ["uv", "run", "radon", "mi", "src/", "--json"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             
             if result.stdout:
