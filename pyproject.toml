@@ -4,7 +4,7 @@
 
 
 name = "mcp-architecton"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for analyzing and introducing Python design patterns"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -107,7 +107,7 @@ no_implicit_optional = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.1.0"
+version = "0.2.0"
 tag_format = "v$version"
 
 [tool.hatch.build.targets.wheel]

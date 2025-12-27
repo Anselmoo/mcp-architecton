@@ -4,7 +4,7 @@ This package provides a modular, reproducible pipeline framework for code qualit
 security, and analysis workflows.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .pipeline import Pipeline, PipelineResult
 from .stages import SecurityStage, QualityStage, TestStage, AnalysisStage
